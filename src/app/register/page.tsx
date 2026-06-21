@@ -54,7 +54,7 @@ export default function RegisterPage() {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-fg">Email</span>
-              <input className="h-11 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              <input className="h-11 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-fg">Password</span>
