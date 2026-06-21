@@ -22,7 +22,7 @@ export function Topbar({ user }: { user: AuthUser }) {
         <UserCircle size={24} />
         <span className="max-w-40 truncate">{user.email}</span>
       </div>
-      <Link href="/api/auth/logout" className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-white" title="Sign out">
+      <Link href="/api/auth/logout" className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-fg" title="Sign out">
         <LogOut size={16} />
       </Link>
     </header>

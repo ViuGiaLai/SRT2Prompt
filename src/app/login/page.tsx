@@ -35,34 +35,34 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-workspace text-white">
+    <main className="min-h-screen bg-workspace text-fg">
       <section className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-5 py-10 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-lg border border-line bg-panel p-6">
-          <Link href="/" className="text-sm text-muted hover:text-white">SRT2Prompt</Link>
+          <Link href="/" className="text-sm text-muted hover:text-fg">SRT2Prompt</Link>
           <h1 className="mt-6 text-3xl font-semibold">Welcome back</h1>
           <p className="mt-2 text-sm text-muted">Continue creating your video content packs.</p>
 
           <form className="mt-6 space-y-4" onSubmit={submit}>
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-200">Email</span>
+              <span className="mb-2 block text-sm font-medium text-fg">Email</span>
               <input className="h-11 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             </label>
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-gray-200">Password</span>
+              <span className="mb-2 block text-sm font-medium text-fg">Password</span>
               <input className="h-11 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
             </label>
-            {error && <div className="rounded-md border border-danger bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
+            {error && <div className="rounded-md border border-danger bg-red-500/10 p-3 text-sm text-danger">{error}</div>}
             <button type="submit" disabled={loading} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-60">
               {loading ? "Logging in..." : "Login"}
               <ArrowRight size={16} />
             </button>
-            <Link href="/api/auth/google" className="flex h-11 w-full items-center justify-center rounded-md border border-line bg-panelSoft text-sm text-white hover:border-accent">
+            <Link href="/api/auth/google" className="flex h-11 w-full items-center justify-center rounded-md border border-line bg-panelSoft text-sm text-fg hover:border-accent">
               Continue with Google
             </Link>
           </form>
 
           <div className="mt-5 flex items-center justify-between text-sm">
-            <Link href="/register" className="text-muted hover:text-white">Create account</Link>
+            <Link href="/register" className="text-muted hover:text-fg">Create account</Link>
             <span className="text-muted">Forgot password</span>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function LoginPage() {
               <div className="font-medium">Generate content packs from SRT files</div>
             </div>
           </div>
-          <div className="space-y-3 text-sm text-gray-200">
+          <div className="space-y-3 text-sm text-fg">
             <div className="rounded-md border border-line bg-panelSoft p-3">Scene prompt cards</div>
             <div className="rounded-md border border-line bg-panelSoft p-3">Thumbnail prompt and title options</div>
             <div className="rounded-md border border-line bg-panelSoft p-3">Export TXT, MD, and JSON</div>

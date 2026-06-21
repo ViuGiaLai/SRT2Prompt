@@ -14,6 +14,7 @@ const config: Config = {
         panelSoft: "var(--color-panel-soft)",
         line: "var(--color-line)",
         muted: "var(--color-muted)",
+        fg: "var(--color-fg)",
         accent: "var(--color-accent)",
         "accent-strong": "var(--color-accent-strong)",
         success: "var(--color-success)",

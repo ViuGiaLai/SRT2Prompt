@@ -33,7 +33,7 @@ export function ProjectsBrowser({ projects }: { projects: Project[] }) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search projects..."
-            className="min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-muted"
+            className="min-w-0 flex-1 bg-transparent text-fg outline-none placeholder:text-muted"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -43,7 +43,7 @@ export function ProjectsBrowser({ projects }: { projects: Project[] }) {
               type="button"
               onClick={() => setFilter(item)}
               className={`rounded-md border px-3 py-2 text-sm ${
-                filter === item ? "border-accent bg-accent text-white" : "border-line bg-panel text-muted hover:text-white"
+                filter === item ? "border-accent bg-accent text-white" : "border-line bg-panel text-muted hover:text-fg"
               }`}
             >
               {item}

@@ -184,7 +184,7 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
               <h1 className="text-2xl font-semibold">Create Content Pack</h1>
               <p className="mt-1 text-sm text-muted">Paste SRT/script or upload a subtitle file.</p>
             </div>
-            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line bg-panelSoft px-3 text-sm text-white hover:border-accent">
+            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line bg-panelSoft px-3 text-sm text-fg hover:border-accent">
               <FileUp size={16} />
               Upload SRT/TXT
               <input type="file" accept=".srt,.txt,text/plain" className="hidden" onChange={handleFileUpload} />
@@ -195,7 +195,7 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
             value={inputText}
             onChange={(event) => void handleInputChange(event.target.value)}
             placeholder="Paste your SRT or script here..."
-            className="min-h-[360px] w-full resize-y rounded-md border border-line bg-[#0B0F19] p-4 text-sm leading-6 text-white focus-ring"
+            className="min-h-[360px] w-full resize-y rounded-md border border-line bg-panelSoft p-4 text-sm leading-6 text-fg focus-ring"
           />
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted">
@@ -288,8 +288,8 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
               )})}
             </div>
 
-            {error && <div className="rounded-md border border-danger bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
-            {notice && <div className="rounded-md border border-success bg-green-500/10 p-3 text-sm text-green-100">{notice}</div>}
+            {error && <div className="rounded-md border border-danger bg-red-500/10 p-3 text-sm text-danger">{error}</div>}
+            {notice && <div className="rounded-md border border-success bg-green-500/10 p-3 text-sm text-success">{notice}</div>}
 
             <div className="sticky bottom-16 z-10 flex flex-wrap gap-3 rounded-lg border border-line bg-panel/95 p-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
               <Button type="button" size="lg" disabled={!canGenerate} onClick={() => void generate()}>
@@ -315,7 +315,7 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <div className="mb-2 text-sm font-medium text-gray-200">{label}</div>
+      <div className="mb-2 text-sm font-medium text-fg">{label}</div>
       {children}
     </label>
   );
@@ -325,7 +325,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border border-line bg-panelSoft p-3">
       <div>{label}</div>
-      <div className="mt-1 text-base font-semibold text-white">{value}</div>
+      <div className="mt-1 text-base font-semibold text-fg">{value}</div>
     </div>
   );
 }

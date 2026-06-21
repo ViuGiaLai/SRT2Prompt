@@ -168,7 +168,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
             type="button"
             onClick={() => setActive(tab)}
             className={`whitespace-nowrap rounded-md px-3 py-2 text-sm transition ${
-              active === tab ? "bg-accent text-white" : "bg-panelSoft text-muted hover:text-white"
+              active === tab ? "bg-accent text-white" : "bg-panelSoft text-muted hover:text-fg"
             }`}
           >
             {tab}
@@ -251,7 +251,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       {active === "Description" && (
         <div className="space-y-3">
           <textarea
-            className="min-h-56 w-full resize-y rounded-md border border-line bg-panelSoft p-4 text-sm leading-6 text-white focus-ring"
+            className="min-h-56 w-full resize-y rounded-md border border-line bg-panelSoft p-4 text-sm leading-6 text-fg focus-ring"
             value={currentPack.description}
             onChange={(event) =>
               setCurrentPack((current) => current ? { ...current, description: event.target.value } : current)
@@ -296,7 +296,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
         <div className="space-y-5">
           <div className="flex flex-wrap gap-2">
             {currentPack.hashtags.map((tag) => (
-              <span key={tag} className="rounded-full bg-panelSoft px-3 py-2 text-sm text-gray-100">
+              <span key={tag} className="rounded-full bg-panelSoft px-3 py-2 text-sm text-fg">
                 {tag}
               </span>
             ))}
@@ -357,7 +357,7 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-line bg-panelSoft p-4">
       <div className="mb-2 text-xs font-semibold uppercase tracking-normal text-muted">{label}</div>
-      <div className="text-sm leading-6 text-gray-100">{value}</div>
+      <div className="text-sm leading-6 text-fg">{value}</div>
     </div>
   );
 }
@@ -366,7 +366,7 @@ function OutputBlock({ title, content }: { title: string; content: string }) {
   return (
     <div className="rounded-lg border border-line bg-panelSoft p-4">
       <div className="mb-2 text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
-      <p className="text-sm leading-6 text-gray-100">{content}</p>
+      <p className="text-sm leading-6 text-fg">{content}</p>
     </div>
   );
 }

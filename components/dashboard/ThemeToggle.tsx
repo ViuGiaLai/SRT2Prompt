@@ -25,7 +25,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggleTheme}
       title="Toggle theme"
-      className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-white"
+      className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-fg"
     >
       {light ? <Sun size={16} /> : <Moon size={16} />}
     </button>

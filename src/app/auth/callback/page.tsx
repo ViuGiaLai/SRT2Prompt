@@ -45,7 +45,7 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-workspace px-5 text-white">
+    <main className="flex min-h-screen items-center justify-center bg-workspace px-5 text-fg">
       <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 text-center">
         {error ? (
           <>

@@ -46,14 +46,14 @@ export function ProjectActions({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Link href="/dashboard/projects" className="rounded-md border border-line px-4 py-2 text-sm text-white hover:border-accent">
+      <Link href="/dashboard/projects" className="rounded-md border border-line px-4 py-2 text-sm text-fg hover:border-accent">
         Back
       </Link>
       <button
         type="button"
         onClick={() => void duplicateProject()}
         disabled={loading === "duplicate"}
-        className="inline-flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-white hover:border-accent disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-fg hover:border-accent disabled:opacity-60"
       >
         <CopyPlus size={15} />
         {loading === "duplicate" ? "Duplicating..." : "Duplicate"}
@@ -62,7 +62,7 @@ export function ProjectActions({ projectId }: { projectId: string }) {
         type="button"
         onClick={() => void deleteProject()}
         disabled={loading === "delete"}
-        className="inline-flex items-center gap-2 rounded-md border border-danger px-4 py-2 text-sm text-red-100 hover:bg-red-500/10 disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-md border border-danger px-4 py-2 text-sm text-danger hover:bg-red-500/10 disabled:opacity-60"
       >
         <Trash2 size={15} />
         {loading === "delete" ? "Deleting..." : "Delete"}

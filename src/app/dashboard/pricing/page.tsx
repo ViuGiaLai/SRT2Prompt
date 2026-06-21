@@ -84,7 +84,7 @@ export default async function PricingPage() {
 
             <ul className="mt-5 space-y-3 text-sm">
               {plan.included.map((item) => (
-                <li key={item} className="flex gap-2 text-gray-100">
+                <li key={item} className="flex gap-2 text-fg">
                   <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={16} />
                   {item}
                 </li>

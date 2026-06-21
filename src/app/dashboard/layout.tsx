@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const usage = await getUsage(user.id, projects.length);
 
   return (
-    <div className="min-h-screen bg-workspace text-white">
+    <div className="min-h-screen bg-workspace text-fg">
       <div className="flex">
         <AppSidebar usage={usage} />
         <div className="min-w-0 flex-1">

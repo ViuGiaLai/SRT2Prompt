@@ -49,7 +49,7 @@ export function ScenePromptCard({
       <div className="space-y-3">
         <div>
           <div className="mb-1 text-xs font-semibold uppercase tracking-normal text-muted">Summary</div>
-          <p className="text-sm leading-6 text-gray-200">{scene.summary}</p>
+          <p className="text-sm leading-6 text-fg">{scene.summary}</p>
         </div>
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-normal text-muted">
@@ -60,10 +60,10 @@ export function ScenePromptCard({
             <textarea
               value={scene.imagePrompt}
               onChange={(event) => onEdit?.(event.target.value)}
-              className="min-h-32 w-full resize-y rounded-md border border-line bg-panelSoft p-3 text-sm leading-6 text-white focus-ring"
+              className="min-h-32 w-full resize-y rounded-md border border-line bg-panelSoft p-3 text-sm leading-6 text-fg focus-ring"
             />
           ) : (
-            <p className="text-sm leading-6 text-gray-100">{scene.imagePrompt}</p>
+            <p className="text-sm leading-6 text-fg">{scene.imagePrompt}</p>
           )}
         </div>
       </div>

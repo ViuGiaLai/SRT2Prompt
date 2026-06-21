@@ -32,7 +32,7 @@ export function PlanButton({ plan, currentPlan }: { plan: PlanName; currentPlan:
       disabled={active || loading}
       className={`mt-5 w-full rounded-md px-4 py-2 text-sm font-medium transition ${
         active
-          ? "border border-success bg-success text-[#06130a]"
+          ? "border border-success bg-success text-fg"
           : "border border-accent bg-accent text-white hover:bg-violet-500"
       }`}
     >

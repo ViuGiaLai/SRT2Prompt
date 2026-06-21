@@ -27,25 +27,25 @@ export function AppSidebar({ usage }: { usage: PlanUsage }) {
         : 100;
 
   return (
-    <aside className="hidden min-h-screen w-64 border-r border-line bg-[#080C15] p-4 lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 border-r border-line bg-workspace p-4 lg:flex lg:flex-col">
       <Link href="/" className="mb-8 flex items-center gap-3 px-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent">
           <Sparkles size={20} />
         </div>
         <div>
-          <div className="text-sm font-semibold">SRT2Prompt</div>
+          <div className="text-sm font-semibold text-fg">SRT2Prompt</div>
           <div className="text-xs text-muted">Storyboard workspace</div>
         </div>
       </Link>
 
-      <nav className="space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto">
         {items.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted transition hover:bg-panelSoft hover:text-white"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted transition hover:bg-panelSoft hover:text-fg"
             >
               <Icon size={17} />
               {item.label}
@@ -54,8 +54,8 @@ export function AppSidebar({ usage }: { usage: PlanUsage }) {
         })}
       </nav>
 
-      <div className="mt-auto rounded-lg border border-line bg-panel p-4">
-        <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+      <div className="rounded-lg border border-line bg-panel p-4">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-fg">
           <BarChart3 size={16} />
           Usage
         </div>
@@ -65,7 +65,7 @@ export function AppSidebar({ usage }: { usage: PlanUsage }) {
         </div>
         <Link
           href="/dashboard/pricing"
-          className="mt-4 block rounded-md border border-accent px-3 py-2 text-center text-xs font-medium text-white hover:bg-accent"
+          className="mt-4 block rounded-md border border-accent px-3 py-2 text-center text-xs font-medium text-fg hover:bg-accent"
         >
           Upgrade
         </Link>

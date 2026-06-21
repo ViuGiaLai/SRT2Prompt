@@ -82,7 +82,7 @@ export default async function DashboardPage() {
             <Meta label="Projects" value={usage.projectLimit ? `${usage.savedProjects} / ${usage.projectLimit}` : `${usage.savedProjects} saved`} />
             <Meta label="Recent runs" value={String(generations.length)} />
           </div>
-          <Link href="/dashboard/pricing" className="mt-5 block rounded-md border border-accent px-4 py-2 text-center text-sm font-medium text-white hover:bg-accent">
+          <Link href="/dashboard/pricing" className="mt-5 block rounded-md border border-accent px-4 py-2 text-center text-sm font-medium text-fg hover:bg-accent">
             Upgrade
           </Link>
         </Panel>
@@ -95,7 +95,7 @@ function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-line pb-2">
       <span className="text-muted">{label}</span>
-      <span className="text-right text-white">{value}</span>
+      <span className="text-right text-fg">{value}</span>
     </div>
   );
 }

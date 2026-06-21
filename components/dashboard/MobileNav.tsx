@@ -15,7 +15,7 @@ export function MobileNav() {
       {items.map((item) => {
         const Icon = item.icon;
         return (
-          <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 px-1 py-2 text-[11px] text-muted hover:text-white">
+          <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 px-1 py-2 text-[11px] text-muted hover:text-fg">
             <Icon size={17} />
             <span>{item.label}</span>
           </Link>

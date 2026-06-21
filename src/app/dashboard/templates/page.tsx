@@ -55,7 +55,7 @@ export default async function TemplatesPage() {
           <Panel key={template.title} className="flex flex-col">
             <h2 className="text-lg font-semibold">{template.title}</h2>
             <p className="mt-2 flex-1 text-sm leading-6 text-muted">{template.description}</p>
-            <div className="mt-4 rounded-md border border-line bg-panelSoft p-3 text-xs text-gray-200">
+            <div className="mt-4 rounded-md border border-line bg-panelSoft p-3 text-xs text-fg">
               {template.config}
             </div>
             <div className="mt-4 flex gap-2">
@@ -68,7 +68,7 @@ export default async function TemplatesPage() {
                   <Link href="/dashboard/generate" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-violet-500">
                     Use Template
                   </Link>
-                  <Link href="/dashboard/generate" className="rounded-md border border-line px-3 py-2 text-sm text-white hover:border-accent">
+                  <Link href="/dashboard/generate" className="rounded-md border border-line px-3 py-2 text-sm text-fg hover:border-accent">
                     Preview Output
                   </Link>
                 </>

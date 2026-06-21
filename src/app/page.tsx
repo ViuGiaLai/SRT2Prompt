@@ -10,7 +10,7 @@ const features = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-workspace text-white">
+    <main className="min-h-screen bg-workspace text-fg">
       <section className="mx-auto grid min-h-[92vh] max-w-7xl items-center gap-10 px-5 py-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <div className="mb-4 inline-flex rounded-full border border-line bg-panel px-3 py-2 text-sm text-muted">
@@ -28,7 +28,7 @@ export default function HomePage() {
               Start Free
               <ArrowRight size={18} />
             </Link>
-            <Link href="#demo" className="inline-flex h-12 items-center rounded-md border border-line bg-panel px-5 font-medium text-white hover:border-accent">
+            <Link href="#demo" className="inline-flex h-12 items-center rounded-md border border-line bg-panel px-5 font-medium text-fg hover:border-accent">
               Generate Demo
             </Link>
           </div>
@@ -40,7 +40,7 @@ export default function HomePage() {
               <div className="text-sm text-muted">Input</div>
               <div className="font-medium">hospital-night-shift.srt</div>
             </div>
-            <div className="rounded-md bg-success px-3 py-1 text-xs font-semibold text-[#06130a]">Generated</div>
+            <div className="rounded-md bg-success px-3 py-1 text-xs font-semibold text-fg">Generated</div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {["12 scene prompts", "5 title ideas", "1 thumbnail prompt", "Description", "Hashtags", "Keywords"].map((item) => (
@@ -50,7 +50,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="mt-5 rounded-md border border-accent/30 bg-[#0B0F19] p-4">
+          <div className="mt-5 rounded-md border border-accent/30 bg-panelSoft p-4">
             <div className="mb-2 text-xs text-muted">Scene 1-3</div>
             <p className="text-sm leading-6">
               A dark cinematic illustration of a tired night security guard standing outside a quiet
@@ -102,7 +102,7 @@ export default function HomePage() {
             ].map(([title, body]) => (
               <div key={title} className="rounded-lg border border-line bg-panel p-5">
                 <div className="mb-2 text-sm text-muted">{title}</div>
-                <p className="text-sm leading-6 text-gray-100">{body}</p>
+                <p className="text-sm leading-6 text-fg">{body}</p>
               </div>
             ))}
           </div>

@@ -59,7 +59,7 @@ function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-line pb-2">
       <span className="text-muted">{label}</span>
-      <span className="text-right text-white">{value}</span>
+      <span className="text-right text-fg">{value}</span>
     </div>
   );
 }
