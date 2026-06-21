@@ -10,9 +10,9 @@ const templates = [
     config: "Horror Story / Dark Cinematic / English / Medium scenes"
   },
   {
-    title: "Reddit Story Pack",
+    title: "YouTube Story Pack",
     description: "Clean story beats for narration channels and faceless videos.",
-    config: "Reddit Story / Semi Realistic / English / Auto scenes"
+    config: "Story / Semi Realistic / English / Auto scenes"
   },
   {
     title: "YouTube Shorts Pack",

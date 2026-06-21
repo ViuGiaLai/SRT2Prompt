@@ -15,7 +15,12 @@ Important rules:
 - Keep visual prompts consistent across scenes.
 - Build a character bible when the input suggests recurring characters.
 - Group the story into Opening, Build-up, Climax, and Ending rather than only raw line ranges.
+- Derive a lightweight intelligence layer with story type, keyword pack, viral score, competitor notes, and image prompt presets.
 - Keep prompts safe, non-graphic, and suitable for general content creation.
+- Treat all violence as implied tension only.
+- Avoid gore, blood, dismemberment, torture, injury closeups, and graphic physical harm.
+- Prefer suspense, atmosphere, facial expression, lighting, and composition over explicit content.
+- If the source text is dark, turn it into cinematic tension rather than explicit violence.
 - If the input is SRT, preserve useful scene ranges and timestamps.
 - Group subtitle lines into scenes based on story meaning, not randomly.
 - Each image prompt must be visual, clear, and usable in an AI image generator.
@@ -80,6 +85,71 @@ Return valid JSON only in this exact structure:
     "clothes": "Weather-appropriate story outfit",
     "personality": "Calm but tense",
     "consistencyNotes": "Keep the same face, hair, and clothes across every scene."
+  },
+  "intelligence": {
+    "storyType": "Horror Story",
+    "storyEngine": {
+      "characters": ["Main Character"],
+      "emotion": "Tense",
+      "timeline": ["Opening: ...", "Build-up: ...", "Climax: ...", "Ending: ..."],
+      "structure": "Opening -> Build-up -> Climax -> Ending"
+    },
+    "sceneEngine": {
+      "beats": ["Opening", "Build-up", "Climax", "Ending"],
+      "notes": ["Use camera, lighting, composition, and emotion per scene"]
+    },
+    "characterMemory": {
+      "name": "Main Character",
+      "age": "Adult",
+      "gender": "Unspecified",
+      "hair": "Short dark hair",
+      "clothes": "Same outfit throughout",
+      "personality": "Consistent and readable",
+      "consistencyNotes": "Keep the same face, hair, clothing, and proportions across every scene."
+    },
+    "keywordPack": {
+      "primary": "faceless video",
+      "secondary": ["story prompts", "youtube content", "storyboard"],
+      "longTail": ["srt to story pack", "faceless youtube story workflow"]
+    },
+    "descriptionEngine": {
+      "seoDensity": "Balanced",
+      "cta": "Subscribe for more story packs",
+      "timestampNote": "Add timestamps for each major beat",
+      "hashtagPlacement": "At the end of the description"
+    },
+    "hashtagEngine": {
+      "hashtags": ["#storytelling", "#aivideo", "#facelessyoutube"],
+      "sourceNotes": "Derived from content theme and story type"
+    },
+    "competitorEngine": [
+      {
+        "name": "Mr Nightmare",
+        "titlePatterns": ["Curiosity", "Fear", "Suspense"],
+        "thumbnailPatterns": ["Dark subject", "High contrast", "Simple composition"],
+        "keywords": ["horror story", "nightmare", "creepy"],
+        "uploadTime": "Evening",
+        "descriptionPattern": "Short intro, story hook, simple CTA"
+      }
+    ],
+    "viralScore": {
+      "seo": 90,
+      "ctr": 90,
+      "emotion": 88,
+      "curiosity": 92,
+      "competition": 66,
+      "trend": 72,
+      "overall": 85,
+      "notes": ["Strong hook", "Clear emotional tension", "Room to improve keyword targeting"]
+    },
+    "imagePromptPresets": {
+      "flux": "Flux-style cinematic frame with strong subject separation, realistic lighting, and readable composition.",
+      "midjourney": "Midjourney prompt emphasizing cinematic detail, dramatic lighting, and strong composition.",
+      "chatgpt": "ChatGPT Image prompt with a clear subject, scene context, and emotional tone.",
+      "leonardo": "Leonardo prompt for sharp facial expression, contrast, and thumbnail clarity.",
+      "gemini": "Gemini image prompt for cohesive scene, lighting, and consistent character."
+    },
+    "apiHooks": ["Gemini API", "YouTube Data API", "YouTube Search Suggest", "Google Trends API", "Supabase"]
   },
   "scenePrompts": [
     {

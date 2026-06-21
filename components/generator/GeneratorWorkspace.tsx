@@ -1,12 +1,12 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { FileUp, Loader2, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { IMAGE_STYLES, OUTPUT_LANGUAGES, SCENE_GROUPINGS, VIDEO_TYPES } from "@/src/lib/constants";
 import { PLAN_LIMITS } from "@/src/lib/plan-config";
-import type { ContentPack, GenerateOptions, ImageStyle, OutputLanguage, PlanUsage, SceneGrouping, VideoType } from "@/src/lib/types";
+import type { ContentPack, GenerateOptions, OutputLanguage, PlanUsage, SceneGrouping } from "@/src/lib/types";
 import { OutputTabs } from "./OutputTabs";
 
 const sampleSrt = `1
@@ -38,11 +38,24 @@ const outputOptions: Array<{ key: OutputOption; label: string }> = [
   { key: "includeKeywords", label: "Generate keywords" }
 ];
 
-export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
+export function GeneratorWorkspace({
+  usage,
+  initialVideoType,
+  initialImageStyle,
+  recentVideoTypes,
+  recentImageStyles
+}: {
+  usage: PlanUsage;
+  initialVideoType: string;
+  initialImageStyle: string;
+  recentVideoTypes: string[];
+  recentImageStyles: string[];
+}) {
   const planLimits = PLAN_LIMITS[usage.plan];
   const [inputText, setInputText] = useState(sampleSrt);
-  const [videoType, setVideoType] = useState<VideoType>("Horror Story");
-  const [imageStyle, setImageStyle] = useState<ImageStyle>("Dark Cinematic");
+  const [videoType, setVideoType] = useState(initialVideoType);
+  const [imageStyle, setImageStyle] = useState(initialImageStyle);
+  const [customImageStyle, setCustomImageStyle] = useState("");
   const [language, setLanguage] = useState<OutputLanguage>("English");
   const [sceneGrouping, setSceneGrouping] = useState<SceneGrouping>("Auto");
   const [pack, setPack] = useState<ContentPack | null>(null);
@@ -63,6 +76,8 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const outputPaneRef = useRef<HTMLDivElement | null>(null);
+  const [extensionDetected, setExtensionDetected] = useState(false);
 
   const canGenerate = useMemo(() => inputText.trim().length >= 10 && !loading, [inputText, loading]);
   const usageLabel =
@@ -71,6 +86,48 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
       : usage.monthlyLimit !== null
         ? `${usage.monthlyGenerations} / ${usage.monthlyLimit} generations this month`
         : "Unlimited generations";
+
+  useEffect(() => {
+    if (!loading) return;
+    requestAnimationFrame(() => {
+      outputPaneRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+  }, [loading]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let timeout: number | undefined;
+    let interval: number | undefined;
+
+    const handler = (event: MessageEvent) => {
+      if (event.source !== window) return;
+      if (event.data?.type === "TAO_ANH_AI_PONG") {
+        setExtensionDetected(true);
+        if (timeout) window.clearTimeout(timeout);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    const ping = () => {
+      window.postMessage({ type: "TAO_ANH_AI_PING" }, window.location.origin);
+      if (timeout) window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setExtensionDetected(false), 1200);
+    };
+
+    ping();
+    interval = window.setInterval(ping, 5000);
+
+    return () => {
+      window.removeEventListener("message", handler);
+      if (timeout) window.clearTimeout(timeout);
+      if (interval) window.clearInterval(interval);
+    };
+  }, []);
 
   async function refreshStats(nextText = inputText, nextGrouping = sceneGrouping) {
     const response = await fetch("/api/stats", {
@@ -113,7 +170,7 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
     const payload: GenerateOptions = {
       inputText,
       videoType,
-      imageStyle,
+      imageStyle: customImageStyle.trim() || imageStyle,
       language,
       sceneGrouping,
       ...selectedOutputs
@@ -146,16 +203,16 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: pack.titles[0] || "Untitled Content Pack",
-          inputText,
-          inputType: stats.inputType,
-          videoType,
-          imageStyle,
-          language,
-          sceneCount: pack.scenePrompts.length,
-          contentPack: pack
-        })
+          body: JSON.stringify({
+            title: pack.titles[0] || "Untitled Content Pack",
+            inputText,
+            inputType: stats.inputType,
+            videoType,
+            imageStyle: customImageStyle.trim() || imageStyle,
+            language,
+            sceneCount: pack.scenePrompts.length,
+            contentPack: pack
+          })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not save project.");
@@ -209,32 +266,84 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
           <h2 className="mb-4 text-lg font-semibold">Settings</h2>
           <div className="space-y-5">
             <Field label="Video Type">
-              <select value={videoType} onChange={(event) => setVideoType(event.target.value as VideoType)} className="h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring">
-                {VIDEO_TYPES.map((item) => <option key={item}>{item}</option>)}
-              </select>
+              <input
+                value={videoType}
+                onChange={(event) => setVideoType(event.target.value)}
+                list="video-type-options"
+                className="h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring"
+                placeholder="Type or choose a video type"
+              />
+              <datalist id="video-type-options">
+                {VIDEO_TYPES.map((item) => <option key={item} value={item} />)}
+              </datalist>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {recentVideoTypes.slice(0, 5).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setVideoType(item)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      videoType === item ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted hover:text-fg"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </Field>
 
             <Field label="Image Style">
-              <div className="grid gap-2 sm:grid-cols-2">
+              <select
+                value={imageStyle}
+                onChange={(event) => setImageStyle(event.target.value)}
+                className="h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring"
+              >
+                {IMAGE_STYLES.map((style) => (
+                  <option key={style.value} value={style.value}>
+                    {style.value}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {IMAGE_STYLES.map((style) => {
-                  const allowed = planLimits.allowedStyles.includes(style.value);
                   return (
-                  <button
-                    key={style.value}
-                    type="button"
-                    onClick={() => allowed && setImageStyle(style.value)}
-                    disabled={!allowed}
-                    className={`rounded-lg border p-3 text-left transition ${
-                      imageStyle === style.value ? "border-accent bg-accent/12" : "border-line bg-panelSoft hover:border-accent"
-                    } ${!allowed ? "opacity-45" : ""}`}
-                  >
-                    <div className="text-sm font-medium">{style.value}</div>
-                    <div className="mt-1 text-xs leading-5 text-muted">
-                      {allowed ? style.description : `Upgrade for ${style.value}`}
-                    </div>
-                  </button>
-                )})}
+                    <button
+                      key={style.value}
+                      type="button"
+                      onClick={() => setImageStyle(style.value)}
+                      className={`rounded-lg border p-3 text-left transition ${
+                        imageStyle === style.value ? "border-accent bg-accent/12" : "border-line bg-panelSoft hover:border-accent"
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{style.value}</div>
+                      <div className="mt-1 text-xs leading-5 text-muted">{style.description}</div>
+                    </button>
+                    );
+                })}
               </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {recentImageStyles.slice(0, 5).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setImageStyle(item);
+                      setCustomImageStyle("");
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      imageStyle === item && !customImageStyle ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted hover:text-fg"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={customImageStyle}
+                onChange={(event) => setCustomImageStyle(event.target.value)}
+                className="mt-3 h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring"
+                placeholder="Optional custom image style"
+              />
             </Field>
 
             <Field label="Output Language">
@@ -288,9 +397,6 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
               )})}
             </div>
 
-            {error && <div className="rounded-md border border-danger bg-red-500/10 p-3 text-sm text-danger">{error}</div>}
-            {notice && <div className="rounded-md border border-success bg-green-500/10 p-3 text-sm text-success">{notice}</div>}
-
             <div className="sticky bottom-16 z-10 flex flex-wrap gap-3 rounded-lg border border-line bg-panel/95 p-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
               <Button type="button" size="lg" disabled={!canGenerate} onClick={() => void generate()}>
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
@@ -301,12 +407,75 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
                 {saving ? "Saving..." : "Save Project"}
               </Button>
             </div>
+            {(error || notice) && (
+              <div className="mt-3 space-y-2">
+                {error && (
+                  <div className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger">
+                    {error}
+                  </div>
+                )}
+                {notice && (
+                  <div className="rounded-md border border-success bg-success/10 p-3 text-sm text-success">
+                    {notice}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Panel>
       </div>
 
-      <div>
-        {loading ? <LoadingPanel /> : <OutputTabs pack={pack} plan={usage.plan} />}
+      <div ref={outputPaneRef} className="scroll-mt-24">
+        <div className="pointer-events-none fixed right-4 top-24 z-30 hidden w-80 xl:block">
+          <div className="pointer-events-auto rounded-xl border border-accent/30 bg-gradient-to-br from-accent/15 via-panelSoft to-panel p-3 shadow-2xl ring-1 ring-accent/15 backdrop-blur">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">AI image generation</div>
+                <div className="truncate text-sm text-muted">Quick access while you work.</div>
+              </div>
+              <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                {extensionDetected ? "Ready" : "Not ready"}
+              </span>
+            </div>
+            <a
+              href="#export"
+              onClick={(event) => {
+                event.preventDefault();
+                window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
+              }}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-accent px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong hover:shadow-md ${extensionDetected ? "animate-pulse" : ""}`}
+            >
+              <Sparkles size={16} />
+              Open AI image generation
+            </a>
+          </div>
+        </div>
+        <div className="pointer-events-none fixed inset-x-4 bottom-20 z-30 xl:hidden">
+          <div className="pointer-events-auto rounded-xl border border-accent/30 bg-gradient-to-r from-accent/15 via-panelSoft to-panel p-3 shadow-2xl ring-1 ring-accent/15 backdrop-blur">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">AI image generation</div>
+                <div className="truncate text-xs text-muted">Quick access.</div>
+              </div>
+              <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                {extensionDetected ? "Ready" : "Not ready"}
+              </span>
+            </div>
+            <a
+              href="#export"
+              onClick={(event) => {
+                event.preventDefault();
+                window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
+              }}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong hover:shadow-md ${extensionDetected ? "animate-pulse" : ""}`}
+            >
+              <Sparkles size={16} />
+              Open AI image generation
+            </a>
+          </div>
+        </div>
+        <div className="h-24 xl:h-0" />
+        {loading ? <LoadingPanel key="loading" /> : <OutputTabs key="output" pack={pack} plan={usage.plan} />}
       </div>
     </div>
   );

@@ -167,9 +167,6 @@ export function assertCanGenerate(usage: PlanUsage, input: { subtitleLines: numb
   if (usage.subtitleLineLimit !== null && input.subtitleLines > usage.subtitleLineLimit) {
     throw new Error(`${usage.plan} plan supports up to ${usage.subtitleLineLimit} subtitle lines per generation.`);
   }
-  if (!limits.allowedStyles.includes(input.imageStyle)) {
-    throw new Error(`${input.imageStyle} is not available on the ${usage.plan} plan.`);
-  }
   if (!limits.allowedLanguages.includes(input.language)) {
     throw new Error(`${input.language} output is not available on the ${usage.plan} plan.`);
   }

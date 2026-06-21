@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileJson, FileText } from "lucide-react";
+import { Download, ExternalLink, FileJson, FileText, Send } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
-import { exportAsCsv, exportAsMarkdown, exportAsText } from "@/src/lib/export";
+import { exportAsCsv, exportAsMarkdown, exportAsText, exportForTaoAnhAI } from "@/src/lib/export";
 import { PLAN_LIMITS } from "@/src/lib/plan-config";
 import type { ContentPack, PlanName } from "@/src/lib/types";
 import { CopyButton } from "./CopyButton";
 import { ScenePromptCard } from "./ScenePromptCard";
 
-const tabs = ["Overview", "Character Bible", "Storyboard", "Scene Prompts", "Thumbnail", "Titles", "Description", "Hashtags", "Export"] as const;
+const tabs = ["Overview", "Intelligence", "Character Bible", "Storyboard", "Scene Prompts", "Thumbnail", "Titles", "Description", "Hashtags", "Export"] as const;
 
 export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPack | null; plan?: PlanName; projectId?: string }) {
   const [active, setActive] = useState<(typeof tabs)[number]>("Overview");
@@ -19,11 +19,14 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
   const [regeneratingScene, setRegeneratingScene] = useState("");
   const [savingChanges, setSavingChanges] = useState(false);
   const [notice, setNotice] = useState("");
+  const [extensionDetected, setExtensionDetected] = useState(false);
   const visibleTabs = useMemo(() => getVisibleTabs(currentPack, plan), [currentPack, plan]);
   const textExport = useMemo(() => (currentPack ? exportAsText(currentPack) : ""), [currentPack]);
   const markdownExport = useMemo(() => (currentPack ? exportAsMarkdown(currentPack) : ""), [currentPack]);
   const csvExport = useMemo(() => (currentPack ? exportAsCsv(currentPack) : ""), [currentPack]);
+  const taoAnhAIExport = useMemo(() => (currentPack ? exportForTaoAnhAI(currentPack) : ""), [currentPack]);
   const exportFormats = PLAN_LIMITS[plan].exportFormats;
+  const taoAnhAIDownloadUrl = process.env.NEXT_PUBLIC_TAOANH_AI_DOWNLOAD_URL?.trim() || "";
 
   useEffect(() => {
     setCurrentPack(pack);
@@ -37,6 +40,40 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       setActive(visibleTabs[0]);
     }
   }, [active, currentPack, visibleTabs]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let timeout: number | undefined;
+    let interval: number | undefined;
+
+    const handler = (event: MessageEvent) => {
+      if (event.source !== window) return;
+      if (event.data?.type === "TAO_ANH_AI_PONG") {
+        setExtensionDetected(true);
+      }
+      if (event.data?.type === "TAO_ANH_AI_IMPORT_ACK") {
+        setNotice(`Sent ${event.data.count || 0} prompt${event.data.count === 1 ? "" : "s"} to TaoAnhAI.`);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    const ping = () => {
+      setExtensionDetected(false);
+      window.postMessage({ type: "TAO_ANH_AI_PING" }, window.location.origin);
+      timeout = window.setTimeout(() => setExtensionDetected(false), 800);
+    };
+
+    ping();
+    interval = window.setInterval(ping, 5000);
+
+    return () => {
+      window.removeEventListener("message", handler);
+      if (timeout) window.clearTimeout(timeout);
+      if (interval) window.clearInterval(interval);
+    };
+  }, []);
 
   if (!currentPack) {
     return (
@@ -141,7 +178,12 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       const response = await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentPack: currentPack })
+        body: JSON.stringify({
+          contentPack: currentPack,
+          videoType: currentPack.videoType,
+          imageStyle: currentPack.imageStyle,
+          language: currentPack.language
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not save changes.");
@@ -151,11 +193,113 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
     }
   }
 
+  async function exportToNotion() {
+    if (!currentPack) return;
+    try {
+      setNotice("Exporting to Notion...");
+      const response = await fetch("/api/export/notion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack: currentPack })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not export to Notion.");
+      setNotice("Exported to Notion.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not export to Notion.");
+    }
+  }
+
+  async function exportToDrive(format: "txt" | "md" | "json") {
+    if (!currentPack) return;
+    try {
+      setNotice("Exporting to Drive...");
+      const response = await fetch("/api/export/drive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack: currentPack, format })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not export to Drive.");
+      setNotice("Exported to Drive.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not export to Drive.");
+    }
+  }
+
+  async function copyTaoAnhAIPackage() {
+    if (!currentPack) return;
+    await navigator.clipboard.writeText(taoAnhAIExport);
+    setNotice("TaoAnhAI package copied to clipboard.");
+  }
+
+  async function sendToTaoAnhAI() {
+    if (!currentPack) return;
+    const prompts = [
+      currentPack.thumbnail.prompt,
+      ...currentPack.scenePrompts.map((scene) => scene.imagePrompt)
+    ]
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!prompts.length) {
+      setNotice("No image prompts available for TaoAnhAI.");
+      return;
+    }
+
+    setNotice("Sending to TaoAnhAI...");
+    window.postMessage(
+      {
+        type: "TAO_ANH_AI_IMPORT_QUEUE",
+        payload: { prompts }
+      },
+      window.location.origin
+    );
+    window.setTimeout(() => {
+      if (!extensionDetected) {
+        setNotice(
+          taoAnhAIDownloadUrl
+            ? "TaoAnhAI was not detected. Download it from Drive and load the unpacked folder in Chrome."
+            : "TaoAnhAI was not detected. Load the unpacked folder in Chrome extensions."
+        );
+      }
+    }, 1200);
+  }
+
+  async function sendThumbnailOnly() {
+    if (!currentPack?.thumbnail.prompt.trim()) return;
+    window.postMessage(
+      {
+        type: "TAO_ANH_AI_IMPORT_QUEUE",
+        payload: { prompts: [currentPack.thumbnail.prompt.trim()] }
+      },
+      window.location.origin
+    );
+  }
+
+  async function sendScenesOnly() {
+    if (!currentPack) return;
+    const prompts = currentPack.scenePrompts.map((scene) => scene.imagePrompt.trim()).filter(Boolean);
+    if (!prompts.length) return;
+    window.postMessage(
+      {
+        type: "TAO_ANH_AI_IMPORT_QUEUE",
+        payload: { prompts }
+      },
+      window.location.origin
+    );
+  }
+
   return (
     <Panel>
       {projectId && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panelSoft p-3">
-          <span className="text-sm text-muted">{notice || "Edit scene prompts, description, or titles, then save changes."}</span>
+          <div className="min-w-0 space-y-1">
+            <span className="text-sm text-muted">{notice || "Edit scene prompts, description, or titles, then save changes."}</span>
+            <div className="text-xs text-muted">
+              TaoAnhAI: <span className={extensionDetected ? "text-success" : "text-warning"}>{extensionDetected ? "detected" : "not detected"}</span>
+            </div>
+          </div>
           <Button type="button" variant="secondary" size="sm" onClick={() => void saveChanges()} disabled={savingChanges}>
             {savingChanges ? "Saving..." : "Save Changes"}
           </Button>
@@ -166,6 +310,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
           <button
             key={tab}
             type="button"
+            data-taoanhai-export-tab={tab === "Export" ? "true" : undefined}
             onClick={() => setActive(tab)}
             className={`whitespace-nowrap rounded-md px-3 py-2 text-sm transition ${
               active === tab ? "bg-accent text-white" : "bg-panelSoft text-muted hover:text-fg"
@@ -184,6 +329,34 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
           <SummaryCard label="Style" value={String(currentPack.imageStyle)} />
           <SummaryCard label="Main Character" value={currentPack.characterBible.name} />
           <SummaryCard label="Character Memory" value={currentPack.characterBible.consistencyNotes} />
+          <SummaryCard label="Overall Score" value={`${currentPack.intelligence.viralScore.overall}/100`} />
+          <SummaryCard label="Story Type" value={currentPack.intelligence.storyType} />
+        </div>
+      )}
+
+      {active === "Intelligence" && (
+        <div className="space-y-4">
+          <SourceStatusGrid status={currentPack.intelligence.sourceStatus} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ScoreCard title="Viral Score" score={currentPack.intelligence.viralScore} />
+            <SummaryCard label="Story Type" value={currentPack.intelligence.storyType} />
+            <SummaryCard label="Primary Keyword" value={currentPack.intelligence.keywordPack.primary} />
+            <SummaryCard label="SEO Density" value={currentPack.intelligence.descriptionEngine.seoDensity} />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <EngineBlock title="Story Engine" items={currentPack.intelligence.storyEngine.characters} note={currentPack.intelligence.storyEngine.structure} />
+            <EngineBlock title="Scene Engine" items={currentPack.intelligence.sceneEngine.notes} note={currentPack.intelligence.sceneEngine.beats.join(" -> ")} />
+            <EngineBlock title="Keyword Engine" items={currentPack.intelligence.keywordPack.secondary} note={currentPack.intelligence.keywordPack.longTail.join(" | ")} />
+            <EngineBlock title="Competitor Engine" items={currentPack.intelligence.competitorEngine.map((item) => item.name)} note={currentPack.intelligence.competitorEngine[0]?.descriptionPattern || "No competitor data"} />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PresetBlock title="Flux" content={currentPack.intelligence.imagePromptPresets.flux} />
+            <PresetBlock title="Midjourney" content={currentPack.intelligence.imagePromptPresets.midjourney} />
+            <PresetBlock title="ChatGPT Image" content={currentPack.intelligence.imagePromptPresets.chatgpt} />
+            <PresetBlock title="Leonardo" content={currentPack.intelligence.imagePromptPresets.leonardo} />
+          </div>
         </div>
       )}
 
@@ -334,32 +507,124 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       )}
 
       {active === "Export" && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {exportFormats.includes("txt") && (
-            <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.txt", textExport, "text/plain")}>
-              <Download size={16} />
-              Export .txt
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {exportFormats.includes("txt") && (
+              <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.txt", textExport, "text/plain")}>
+                <Download size={16} />
+                Export .txt
+              </Button>
+            )}
+            {exportFormats.includes("md") && (
+              <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.md", markdownExport, "text/markdown")}>
+                <FileText size={16} />
+                Export .md
+              </Button>
+            )}
+            {exportFormats.includes("json") && (
+              <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.json", JSON.stringify(currentPack, null, 2), "application/json")}>
+                <FileJson size={16} />
+                Export .json
+              </Button>
+            )}
+            {exportFormats.includes("csv") && (
+              <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.csv", csvExport, "text/csv")}>
+                <FileText size={16} />
+                Export .csv
+              </Button>
+            )}
+            <CopyButton text={textExport} label="Copy Full Pack" />
+            <Button type="button" variant="secondary" onClick={() => void exportToNotion()}>
+              Export to Notion
             </Button>
-          )}
-          {exportFormats.includes("md") && (
-            <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.md", markdownExport, "text/markdown")}>
-              <FileText size={16} />
-              Export .md
+            <Button type="button" variant="secondary" onClick={() => void exportToDrive("md")}>
+              Export to Drive
             </Button>
-          )}
-          {exportFormats.includes("json") && (
-            <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.json", JSON.stringify(currentPack, null, 2), "application/json")}>
-              <FileJson size={16} />
-              Export .json
-            </Button>
-          )}
-          {exportFormats.includes("csv") && (
-            <Button type="button" variant="secondary" onClick={() => download("srt2prompt-pack.csv", csvExport, "text/csv")}>
-              <FileText size={16} />
-              Export .csv
-            </Button>
-          )}
-          <CopyButton text={textExport} label="Copy Full Pack" />
+          </div>
+
+          <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-accent/12 via-panelSoft to-panel p-4 shadow-sm ring-1 ring-accent/15">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                    {extensionDetected ? "Extension detected" : "Extension not detected"}
+                  </span>
+                  <span className="rounded-full bg-panel px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    TaoAnhAI bridge
+                  </span>
+                </div>
+                <h3 className="text-base font-semibold text-fg">Send image prompts directly to TaoAnhAI</h3>
+                <p className="max-w-2xl text-sm leading-6 text-muted">
+                  Push the thumbnail prompt or scene prompts to the extension without copy-paste. Use the main button for the full queue, or send only what you need.
+                </p>
+              </div>
+              {taoAnhAIDownloadUrl ? (
+                <a
+                  href={taoAnhAIDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md border border-accent/30 bg-panel px-4 py-2 text-sm font-medium text-fg transition hover:border-accent hover:shadow-sm"
+                >
+                  <ExternalLink size={16} />
+                  Download TaoAnhAI
+                </a>
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <Button
+                type="button"
+                onClick={() => void sendToTaoAnhAI()}
+                className={`group justify-start border-transparent bg-gradient-to-r from-accent to-accent-strong text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${extensionDetected ? "animate-pulse" : ""}`}
+              >
+                <Send size={16} className="transition-transform group-hover:translate-x-0.5" />
+                Send full queue
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void sendThumbnailOnly()}
+                className="justify-start"
+              >
+                <Send size={16} />
+                Send thumbnail only
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void sendScenesOnly()}
+                className="justify-start"
+              >
+                <Send size={16} />
+                Send scenes only
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void copyTaoAnhAIPackage()}
+                className="justify-start sm:col-span-2 lg:col-span-1"
+              >
+                <Send size={16} />
+                Copy for TaoAnhAI
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => download("taoanhai-queue.json", taoAnhAIExport, "application/json")}
+                className="justify-start sm:col-span-2 lg:col-span-1"
+              >
+                <Download size={16} />
+                Download TaoAnhAI JSON
+              </Button>
+            </div>
+
+            <p className="mt-3 text-xs leading-5 text-muted">
+              If the extension is not installed yet, download the TaoAnhAI package, unzip it, then load it in Chrome via
+              <span className="mx-1 font-medium text-fg">chrome://extensions</span>
+              and
+              <span className="mx-1 font-medium text-fg">Load unpacked</span>.
+            </p>
+          </div>
         </div>
       )}
     </Panel>
@@ -414,5 +679,117 @@ function TitleGroupCard({ title, titles }: { title: string; titles: string[] }) 
         ))}
       </div>
     </div>
+  );
+}
+
+function ScoreCard({ title, score }: { title: string; score: { seo: number; ctr: number; emotion: number; curiosity: number; competition: number; trend: number; overall: number; notes: string[] } }) {
+  const items = [
+    ["SEO", score.seo],
+    ["CTR", score.ctr],
+    ["Emotion", score.emotion],
+    ["Curiosity", score.curiosity],
+    ["Competition", score.competition],
+    ["Trend", score.trend]
+  ] as const;
+
+  return (
+    <div className="rounded-lg border border-line bg-panelSoft p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
+        <div className="text-sm font-semibold text-fg">Overall {score.overall}/100</div>
+      </div>
+      <div className="mt-4 grid gap-2">
+        {items.map(([label, value]) => (
+          <div key={label}>
+            <div className="mb-1 flex items-center justify-between text-xs text-muted">
+              <span>{label}</span>
+              <span>{value}</span>
+            </div>
+            <div className="h-2 rounded-full bg-line">
+              <div className="h-2 rounded-full bg-accent" style={{ width: `${value}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 space-y-2 text-xs text-muted">
+        {score.notes.map((note) => (
+          <div key={note} className="rounded-md border border-line bg-panel px-3 py-2">
+            {note}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EngineBlock({ title, items, note }: { title: string; items: string[]; note: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-panelSoft p-4">
+      <div className="text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {items.length ? items.map((item) => (
+          <span key={item} className="rounded-full border border-line bg-panel px-3 py-1 text-xs text-fg">
+            {item}
+          </span>
+        )) : <span className="text-sm text-muted">No data</span>}
+      </div>
+      <div className="mt-3 text-sm text-muted">{note}</div>
+    </div>
+  );
+}
+
+function PresetBlock({ title, content }: { title: string; content: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-panelSoft p-4">
+      <div className="text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
+      <p className="mt-2 text-sm leading-6 text-fg">{content}</p>
+    </div>
+  );
+}
+
+function SourceStatusGrid({ status }: { status: { youtubeData: string; youtubeSuggest: string; trends: string; notion: string; drive: string } }) {
+  const items = [
+    ["YouTube Data", status.youtubeData],
+    ["YouTube Suggest", status.youtubeSuggest],
+    ["Trends", status.trends],
+    ["Notion", status.notion],
+    ["Drive", status.drive]
+  ] as const;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {items.map(([label, value]) => (
+        <div key={label} className="rounded-lg border border-line bg-panelSoft p-4">
+          <div className="text-xs font-semibold uppercase tracking-normal text-muted">{label}</div>
+          <SourcePill value={value} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SourcePill({ value }: { value: string }) {
+  const classes =
+    value === "live"
+      ? "bg-success/15 text-success border-success/30"
+      : value === "fallback"
+        ? "bg-warning/15 text-warning border-warning/30"
+        : value === "missing_key"
+          ? "bg-danger/15 text-danger border-danger/30"
+          : "bg-panel text-muted border-line";
+
+  const label =
+    value === "live"
+      ? "Live"
+      : value === "fallback"
+        ? "Fallback"
+        : value === "missing_key"
+          ? "Missing Key"
+          : "Error";
+
+  return (
+    <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${classes}`}>
+      {label}
+    </span>
   );
 }

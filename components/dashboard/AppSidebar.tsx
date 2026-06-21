@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CreditCard, FileText, History, LayoutDashboard, Settings, Sparkles, Wand2 } from "lucide-react";
+import { BarChart3, Bug, CreditCard, FileText, History, LayoutDashboard, Settings, Sparkles, Wand2 } from "lucide-react";
 import { BrandIcon } from "@/components/BrandIcon";
 import type { PlanUsage } from "@/src/lib/types";
 
@@ -9,6 +9,7 @@ const items = [
   { href: "/dashboard/projects", label: "Projects", icon: FileText },
   { href: "/dashboard/templates", label: "Templates", icon: Wand2 },
   { href: "/dashboard/history", label: "History", icon: History },
+  { href: "/dashboard/diagnostics", label: "Diagnostics", icon: Bug },
   { href: "/dashboard/pricing", label: "Pricing", icon: CreditCard },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings }

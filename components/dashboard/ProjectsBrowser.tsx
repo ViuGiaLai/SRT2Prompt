@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { CopyPlus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Project } from "@/src/lib/types";
 
-const filters = ["All", "Horror", "Mystery", "Reddit", "Education", "Shorts"] as const;
+const filters = ["All", "Horror", "Mystery", "Story", "Education", "Shorts"] as const;
 
 export function ProjectsBrowser({ projects }: { projects: Project[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
+  const [duplicatingId, setDuplicatingId] = useState("");
 
   const filteredProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -23,6 +26,23 @@ export function ProjectsBrowser({ projects }: { projects: Project[] }) {
       return matchesQuery && matchesFilter;
     });
   }, [filter, projects, query]);
+
+  async function duplicateProject(projectId: string) {
+    setDuplicatingId(projectId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "duplicate" })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not duplicate project.");
+      router.push(`/dashboard/projects/${data.project.id}`);
+      router.refresh();
+    } finally {
+      setDuplicatingId("");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -59,14 +79,30 @@ export function ProjectsBrowser({ projects }: { projects: Project[] }) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredProjects.map((project) => (
-            <Link key={project.id} href={`/dashboard/projects/${project.id}`} className="rounded-lg border border-line bg-panel p-5 transition hover:border-accent">
-              <div className="mb-3 line-clamp-2 text-lg font-semibold">{project.title}</div>
-              <div className="space-y-2 text-sm text-muted">
-                <div>{project.videoType} / {project.imageStyle}</div>
-                <div>{project.sceneCount} scenes</div>
-                <div>{new Date(project.createdAt).toLocaleString()}</div>
+            <div key={project.id} className="rounded-lg border border-line bg-panel p-5 transition hover:border-accent">
+              <Link href={`/dashboard/projects/${project.id}`} className="block">
+                <div className="mb-3 line-clamp-2 text-lg font-semibold">{project.title}</div>
+                <div className="space-y-2 text-sm text-muted">
+                  <div>{project.videoType} / {project.imageStyle}</div>
+                  <div>{project.sceneCount} scenes</div>
+                  <div>{new Date(project.createdAt).toLocaleString()}</div>
+                </div>
+              </Link>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href={`/dashboard/projects/${project.id}`} className="rounded-md border border-line px-3 py-2 text-xs text-fg hover:border-accent">
+                  Open
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void duplicateProject(project.id)}
+                  disabled={duplicatingId === project.id}
+                  className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-xs text-fg hover:border-accent disabled:opacity-60"
+                >
+                  <CopyPlus size={14} />
+                  {duplicatingId === project.id ? "Duplicating..." : "Duplicate"}
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

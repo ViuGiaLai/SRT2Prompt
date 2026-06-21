@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import postgres from "postgres";
-import type { CharacterBible, ContentPack, InputType, Project, StoryBeat, StoryboardScene, TitlePack } from "./types";
+import type { CharacterBible, ContentPack, EngineSourceStatus, ImagePromptPreset, IntelligencePack, InputType, Project, StoryBeat, StoryboardScene, TitlePack, ViralScore } from "./types";
 
 const connectionString = process.env.DATABASE_URL;
 const hasUsableDatabaseUrl =
@@ -178,12 +178,20 @@ export async function deleteProject(id: string, userId: string) {
   }, async () => deleteLocalProject(id, userId));
 }
 
-export async function updateProjectContent(id: string, userId: string, contentPack: ContentPack) {
+export async function updateProjectContent(
+  id: string,
+  userId: string,
+  contentPack: ContentPack,
+  metadata?: { videoType?: string; imageStyle?: string; language?: string }
+) {
   return runWithFallback(async () => {
     await ensureSchema();
     const rows = await db()`
       update projects
       set content_pack = ${JSON.stringify(contentPack)}::jsonb,
+          video_type = ${metadata?.videoType || contentPack.videoType},
+          image_style = ${metadata?.imageStyle || contentPack.imageStyle},
+          language = ${metadata?.language || contentPack.language},
           scene_count = ${contentPack.scenePrompts.length},
           updated_at = ${new Date().toISOString()}
       where id = ${id}
@@ -203,7 +211,7 @@ export async function updateProjectContent(id: string, userId: string, contentPa
         updated_at
     `;
     return rows[0] ? rowToProject(rows[0] as unknown as ProjectRow) : null;
-  }, async () => updateLocalProjectContent(id, userId, contentPack));
+  }, async () => updateLocalProjectContent(id, userId, contentPack, metadata));
 }
 
 async function ensureSchema() {
@@ -294,7 +302,7 @@ async function deleteLocalProject(id: string, userId: string) {
   return nextProjects.length !== projects.length;
 }
 
-async function updateLocalProjectContent(id: string, userId: string, contentPack: ContentPack) {
+async function updateLocalProjectContent(id: string, userId: string, contentPack: ContentPack, metadata?: { videoType?: string; imageStyle?: string; language?: string }) {
   const projects = await readLocalProjects();
   const index = projects.findIndex((project) => project.id === id && project.userId === userId);
   if (index === -1) return null;
@@ -302,6 +310,9 @@ async function updateLocalProjectContent(id: string, userId: string, contentPack
   projects[index] = {
     ...projects[index],
     contentPack,
+    videoType: metadata?.videoType || contentPack.videoType,
+    imageStyle: metadata?.imageStyle || contentPack.imageStyle,
+    language: metadata?.language || contentPack.language,
     sceneCount: contentPack.scenePrompts.length,
     updatedAt: new Date().toISOString()
   };
@@ -373,6 +384,7 @@ function normalizeContentPack(contentPack: Partial<ContentPack> | undefined): Co
     consistencyNotes: "Keep the same face, hair, clothing, and proportions across every scene."
   };
 
+  const characterBible = contentPack?.characterBible || fallbackCharacterBible;
   const emptyStoryScene: StoryboardScene = {
     sceneRange: "1",
     timestamp: "Script segment",
@@ -426,9 +438,77 @@ function normalizeContentPack(contentPack: Partial<ContentPack> | undefined): Co
       compositionNotes: ""
     },
     titlePack,
+    intelligence: normalizeIntelligence(contentPack?.intelligence, characterBible, scenePrompts, titlePack),
     titles: contentPack?.titles || [...titlePack.curiosity, ...titlePack.fear, ...titlePack.question, ...titlePack.clickbait],
     description: contentPack?.description || "",
     hashtags: contentPack?.hashtags || [],
     keywords: contentPack?.keywords || []
+  };
+}
+
+function normalizeIntelligence(
+  intelligence: Partial<IntelligencePack> | undefined,
+  characterBible: CharacterBible,
+  scenePrompts: StoryboardScene[],
+  titlePack: TitlePack
+): IntelligencePack {
+  const defaultScore: ViralScore = {
+    seo: 80,
+    ctr: 80,
+    emotion: 80,
+    curiosity: 80,
+    competition: 70,
+    trend: 70,
+    overall: 77,
+    notes: ["Legacy project normalized with default intelligence values."]
+  };
+  const defaultPresets: ImagePromptPreset = {
+    flux: "Flux prompt preset",
+    midjourney: "Midjourney prompt preset",
+    chatgpt: "ChatGPT Image prompt preset",
+    leonardo: "Leonardo prompt preset",
+    gemini: "Gemini prompt preset"
+  };
+  const defaultSourceStatus: EngineSourceStatus = {
+    youtubeData: "missing_key",
+    youtubeSuggest: "fallback",
+    trends: "fallback",
+    notion: "missing_key",
+    drive: "missing_key"
+  };
+
+  return {
+    storyType: intelligence?.storyType || "Story",
+    storyEngine: {
+      characters: intelligence?.storyEngine?.characters || [characterBible.name],
+      emotion: intelligence?.storyEngine?.emotion || "Tense",
+      timeline: intelligence?.storyEngine?.timeline || scenePrompts.map((scene) => `${scene.beat}: ${scene.summary}`),
+      structure: intelligence?.storyEngine?.structure || "Opening -> Build-up -> Climax -> Ending"
+    },
+    sceneEngine: {
+      beats: intelligence?.sceneEngine?.beats || scenePrompts.map((scene) => scene.beat),
+      notes: intelligence?.sceneEngine?.notes || ["Legacy project normalized with storyboard beats."]
+    },
+    characterMemory: intelligence?.characterMemory || characterBible,
+    keywordPack: intelligence?.keywordPack || {
+      primary: "faceless video",
+      secondary: titlePack.curiosity.slice(0, 4),
+      longTail: ["legacy project keywords"]
+    },
+    descriptionEngine: intelligence?.descriptionEngine || {
+      seoDensity: "Balanced",
+      cta: "Invite viewers to follow for more story packs.",
+      timestampNote: "Use timestamps for each major beat.",
+      hashtagPlacement: "Place hashtags at the end of the description."
+    },
+    hashtagEngine: intelligence?.hashtagEngine || {
+      hashtags: ["#storytelling", "#aivideo"],
+      sourceNotes: "Legacy project normalized with default hashtags."
+    },
+    competitorEngine: intelligence?.competitorEngine || [],
+    viralScore: intelligence?.viralScore || defaultScore,
+    imagePromptPresets: intelligence?.imagePromptPresets || defaultPresets,
+    apiHooks: intelligence?.apiHooks || ["Gemini API", "Supabase"],
+    sourceStatus: intelligence?.sourceStatus || defaultSourceStatus
   };
 }

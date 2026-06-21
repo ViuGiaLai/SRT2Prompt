@@ -10,7 +10,7 @@ export default async function PricingPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-3xl font-semibold">Pricing</h1>
-        <p className="mt-2 text-sm text-muted">Choose a plan and continue to Lemon Squeezy checkout.</p>
+        <p className="mt-2 text-sm text-muted">Compare what each plan includes before going to Lemon Squeezy checkout.</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -10,17 +10,25 @@ export const dynamic = "force-dynamic";
 export default async function ProjectsPage() {
   const user = await requireUser();
   const projects = await listProjects(user.id).catch(() => null);
+  const latestProject = projects?.[0] || null;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold">Projects</h1>
-          <p className="mt-2 text-sm text-muted">Saved SRT2Prompt content packs.</p>
+          <p className="mt-2 text-sm text-muted">Saved SRT2Prompt content packs. Start a new one from the generator.</p>
         </div>
-        <Link href="/dashboard/generate" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
-          New Generate
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {latestProject && (
+            <Link href={`/dashboard/projects/${latestProject.id}`} className="rounded-md border border-line px-4 py-2 text-sm text-fg hover:border-accent">
+              Open Latest
+            </Link>
+          )}
+          <Link href="/dashboard/generate" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
+            New Project
+          </Link>
+        </div>
       </div>
 
       {projects === null ? (

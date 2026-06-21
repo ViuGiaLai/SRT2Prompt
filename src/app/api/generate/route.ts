@@ -5,6 +5,7 @@ import { listProjects } from "@/src/lib/projects";
 import { assertCanGenerate, getUsage, normalizePackForPlan, outputOptionsForPlan, recordGeneration } from "@/src/lib/plans";
 import { detectInputType, getInputStats } from "@/src/lib/srt";
 import type { GenerateOptions } from "@/src/lib/types";
+import { getUserSettings } from "@/src/lib/user-settings";
 
 export async function POST(request: Request) {
   let userId = "";
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       subtitleLines: stats.subtitleLines,
       estimatedScenes: stats.estimatedScenes
     };
+    const settings = await getUserSettings(user.id);
     const projects = await listProjects(user.id).catch(() => []);
     const usage = await getUsage(user.id, projects.length);
     assertCanGenerate(usage, {
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
     const planOutputs = outputOptionsForPlan(usage.plan);
     const planOptions: GenerateOptions = {
       ...options,
+      youtubeChannelId: options.youtubeChannelId || settings.youtubeChannelId || undefined,
       includeThumbnail: options.includeThumbnail !== false && planOutputs.includeThumbnail,
       includeTitles: options.includeTitles !== false && planOutputs.includeTitles,
       includeDescription: options.includeDescription !== false && planOutputs.includeDescription,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardPaste, FileUp, Languages, Skull, Sparkles } from "lucide-react";
+import { Bug, ClipboardPaste, FileUp, Languages, Skull, Sparkles } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { requireUser } from "@/src/lib/auth";
 import { listProjects } from "@/src/lib/projects";
@@ -9,7 +9,8 @@ const actions = [
   { label: "Paste Script", icon: ClipboardPaste },
   { label: "Upload SRT", icon: FileUp },
   { label: "Create Horror Story Pack", icon: Skull },
-  { label: "Translate Subtitle", icon: Languages }
+  { label: "Translate Subtitle", icon: Languages },
+  { label: "Diagnostics", icon: Bug, href: "/dashboard/diagnostics" }
 ];
 
 export default async function DashboardPage() {
@@ -41,7 +42,11 @@ export default async function DashboardPage() {
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <Link key={action.label} href="/dashboard/generate" className="rounded-lg border border-line bg-panel p-5 transition hover:border-accent">
+            <Link
+              key={action.label}
+              href={action.href || "/dashboard/generate"}
+              className="rounded-lg border border-line bg-panel p-5 transition hover:border-accent"
+            >
               <Icon className="mb-4 text-accent" size={24} />
               <div className="font-medium">{action.label}</div>
             </Link>

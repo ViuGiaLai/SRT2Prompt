@@ -70,12 +70,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const user = await requireApiUser();
     const body = await request.json();
     const contentPack = body.contentPack as ContentPack | undefined;
+    const videoType = typeof body.videoType === "string" ? body.videoType : undefined;
+    const imageStyle = typeof body.imageStyle === "string" ? body.imageStyle : undefined;
+    const language = typeof body.language === "string" ? body.language : undefined;
 
     if (!contentPack?.scenePrompts || !contentPack.summary) {
       return NextResponse.json({ error: "Valid contentPack is required." }, { status: 400 });
     }
 
-    const project = await updateProjectContent(params.id, user.id, contentPack);
+    const project = await updateProjectContent(params.id, user.id, contentPack, { videoType, imageStyle, language });
     if (!project) {
       return NextResponse.json({ error: "Project not found." }, { status: 404 });
     }

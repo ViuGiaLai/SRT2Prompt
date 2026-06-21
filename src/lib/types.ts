@@ -23,6 +23,14 @@ export type InputType = "srt" | "script";
 
 export type PlanName = "Free" | "Creator" | "Pro";
 
+export type UserSettings = {
+  defaultVideoType: string;
+  defaultImageStyle: string;
+  youtubeChannelId: string;
+  recentVideoTypes: string[];
+  recentImageStyles: string[];
+};
+
 export type StoryBeat = "Opening" | "Build-up" | "Climax" | "Ending";
 
 export type SubtitleLine = {
@@ -67,6 +75,81 @@ export type TitlePack = {
   clickbait: string[];
 };
 
+export type ViralScore = {
+  seo: number;
+  ctr: number;
+  emotion: number;
+  curiosity: number;
+  competition: number;
+  trend: number;
+  overall: number;
+  notes: string[];
+};
+
+export type KeywordPack = {
+  primary: string;
+  secondary: string[];
+  longTail: string[];
+};
+
+export type CompetitorAnalysis = {
+  name: string;
+  titlePatterns: string[];
+  thumbnailPatterns: string[];
+  keywords: string[];
+  uploadTime: string;
+  descriptionPattern: string;
+};
+
+export type ImagePromptPreset = {
+  flux: string;
+  midjourney: string;
+  chatgpt: string;
+  leonardo: string;
+  gemini: string;
+};
+
+export type SourceStatusState = "live" | "fallback" | "missing_key" | "error";
+
+export type EngineSourceStatus = {
+  youtubeData: SourceStatusState;
+  youtubeSuggest: SourceStatusState;
+  trends: SourceStatusState;
+  notion: SourceStatusState;
+  drive: SourceStatusState;
+};
+
+export type IntelligencePack = {
+  storyType: string;
+  storyEngine: {
+    characters: string[];
+    emotion: string;
+    timeline: string[];
+    structure: string;
+  };
+  sceneEngine: {
+    beats: StoryBeat[];
+    notes: string[];
+  };
+  characterMemory: CharacterBible;
+  keywordPack: KeywordPack;
+  descriptionEngine: {
+    seoDensity: string;
+    cta: string;
+    timestampNote: string;
+    hashtagPlacement: string;
+  };
+  hashtagEngine: {
+    hashtags: string[];
+    sourceNotes: string;
+  };
+  competitorEngine: CompetitorAnalysis[];
+  viralScore: ViralScore;
+  imagePromptPresets: ImagePromptPreset;
+  apiHooks: string[];
+  sourceStatus: EngineSourceStatus;
+};
+
 export type StoryboardScene = {
   sceneRange: string;
   timestamp: string;
@@ -102,6 +185,7 @@ export type ContentPack = {
   thumbnail: ThumbnailPrompt;
   titles: string[];
   titlePack: TitlePack;
+  intelligence: IntelligencePack;
   description: string;
   hashtags: string[];
   keywords: string[];
@@ -110,10 +194,11 @@ export type ContentPack = {
 export type GenerateOptions = {
   inputText: string;
   inputType?: InputType;
-  videoType: VideoType;
-  imageStyle: ImageStyle;
+  videoType: string;
+  imageStyle: string;
   language: OutputLanguage;
   sceneGrouping: SceneGrouping;
+  youtubeChannelId?: string;
   includeThumbnail?: boolean;
   includeTitles?: boolean;
   includeDescription?: boolean;

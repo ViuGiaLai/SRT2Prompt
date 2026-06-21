@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,18 +21,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          id="theme-bootstrap"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=window.localStorage.getItem('srt2prompt-theme');document.documentElement.classList.toggle('theme-light',s==='light')}catch(e){}})()`
+          }}
+        />
+      </head>
       <body>
-        <Script id="theme-bootstrap" strategy="beforeInteractive">
-          {`
-            (function () {
-              try {
-                var saved = window.localStorage.getItem('srt2prompt-theme');
-                var light = saved === 'light';
-                document.documentElement.classList.toggle('theme-light', light);
-              } catch (e) {}
-            })();
-          `}
-        </Script>
         {children}
       </body>
     </html>

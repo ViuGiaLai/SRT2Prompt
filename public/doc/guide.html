@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SRT2Prompt Guide</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0c1117;
+        --panel: #111827;
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #edf2ff;
+        --muted: #98a2b3;
+        --accent: #f7c948;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 180px), var(--bg);
+        color: var(--text);
+        font: 14px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .shell { max-width: 900px; margin: 0 auto; padding: 24px; }
+      .card {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--panel);
+        border-radius: 16px;
+        padding: 20px;
+      }
+      .eyebrow {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 { margin: 8px 0 8px; font-size: 28px; line-height: 1.1; }
+      p { margin: 0; color: var(--muted); }
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 700;
+        background: rgba(255,255,255,0.04);
+      }
+      a.btn.primary {
+        background: linear-gradient(180deg, rgba(247,201,72,0.95), rgba(240,165,0,0.95));
+        color: #111;
+      }
+      .grid {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .box {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        background: rgba(255,255,255,0.02);
+      }
+      .box h2 { margin: 0 0 8px; font-size: 16px; }
+      .box p { margin: 0; }
+      code {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 2px 6px;
+        color: var(--text);
+      }
+      ol {
+        margin: 18px 0 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 10px;
+        color: var(--text);
+      }
+      @media (max-width: 720px) {
+        .grid { grid-template-columns: 1fr; }
+        .shell { padding: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card">
+        <div class="eyebrow">SRT2Prompt</div>
+        <h1>Project Guide</h1>
+        <p>
+          Open this page directly at <code>/doc/guide.html</code>. It is a static file, so Vercel will serve it
+          as soon as it is pushed to GitHub and deployed.
+        </p>
+
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/ViuGiaLai/AI-image-generation" target="_blank" rel="noreferrer">
+            Open GitHub repo
+          </a>
+          <a class="btn" href="https://github.com/ViuGiaLai/AI-image-generation/archive/refs/heads/main.zip" target="_blank" rel="noreferrer">
+            Download ZIP
+          </a>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <h2>1. Direct file path</h2>
+            <p>After deploy, this page is reachable at <code>srt2prompt.vercel.app/doc/guide.html</code>.</p>
+          </div>
+          <div class="box">
+            <h2>2. GitHub source</h2>
+            <p>Push this file to the repo, then Vercel redeploys from Git automatically.</p>
+          </div>
+          <div class="box">
+            <h2>3. What users do</h2>
+            <p>They open the page, click the GitHub repo or ZIP link, and install or inspect the project.</p>
+          </div>
+          <div class="box">
+            <h2>4. Notes</h2>
+            <p>If you want a prettier docs page later, keep this same path and replace the content only.</p>
+          </div>
+        </div>
+
+        <ol>
+          <li>Place static docs inside <code>public/</code>.</li>
+          <li>Use the exact filename <code>guide.html</code> for the URL you want.</li>
+          <li>Push to GitHub and wait for Vercel to finish deployment.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

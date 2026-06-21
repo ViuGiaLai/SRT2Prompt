@@ -14,7 +14,7 @@ export function Topbar({ user }: { user: AuthUser }) {
         className="hidden h-10 items-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-medium text-white shadow-sm transition-all duration-200 ease-out hover:bg-accent-strong hover:shadow-md active:scale-[0.99] sm:inline-flex"
       >
         <Sparkles size={16} />
-        New Generate
+        New Project
       </a>
       <ThemeToggle />
       <div className="hidden min-w-0 items-center gap-2 text-sm text-muted md:flex">

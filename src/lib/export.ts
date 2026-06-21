@@ -14,6 +14,13 @@ export function exportAsText(pack: ContentPack) {
     `Personality: ${pack.characterBible.personality}`,
     `Consistency Notes: ${pack.characterBible.consistencyNotes}`,
     "",
+    "INTELLIGENCE",
+    `Story Type: ${pack.intelligence.storyType}`,
+    `Overall Score: ${pack.intelligence.viralScore.overall}/100`,
+    `Primary Keyword: ${pack.intelligence.keywordPack.primary}`,
+    `CTA: ${pack.intelligence.descriptionEngine.cta}`,
+    `API Hooks: ${pack.intelligence.apiHooks.join(", ")}`,
+    "",
     "STORYBOARD",
     ...pack.storyboard.flatMap((scene) => [
       "",
@@ -71,6 +78,13 @@ export function exportAsMarkdown(pack: ContentPack) {
     `- **Clothes:** ${pack.characterBible.clothes}`,
     `- **Personality:** ${pack.characterBible.personality}`,
     `- **Consistency Notes:** ${pack.characterBible.consistencyNotes}`,
+    "",
+    "## Intelligence",
+    `- **Story Type:** ${pack.intelligence.storyType}`,
+    `- **Overall Score:** ${pack.intelligence.viralScore.overall}/100`,
+    `- **Primary Keyword:** ${pack.intelligence.keywordPack.primary}`,
+    `- **CTA:** ${pack.intelligence.descriptionEngine.cta}`,
+    `- **API Hooks:** ${pack.intelligence.apiHooks.join(", ")}`,
     "",
     "## Storyboard",
     ...pack.storyboard.flatMap((scene) => [
@@ -131,6 +145,9 @@ export function exportAsCsv(pack: ContentPack) {
     ["section", "label", "content"],
     ["summary", "Video Summary", pack.summary],
     ["character", "Character Bible", `${pack.characterBible.name} ${pack.characterBible.age} ${pack.characterBible.clothes}`],
+    ["intelligence", "Story Type", pack.intelligence.storyType],
+    ["intelligence", "Overall Score", `${pack.intelligence.viralScore.overall}/100`],
+    ["intelligence", "Primary Keyword", pack.intelligence.keywordPack.primary],
     ...pack.storyboard.map((scene) => [
       "storyboard",
       `Scene ${scene.sceneRange} ${scene.beat}`,
@@ -152,6 +169,40 @@ export function exportAsCsv(pack: ContentPack) {
   ];
 
   return rows.map((row) => row.map(csvCell).join(",")).join("\n");
+}
+
+export function exportForTaoAnhAI(pack: ContentPack) {
+  const payload = {
+    version: "1.0",
+    source: "SRT2Prompt",
+    title: pack.titles[0] || "Untitled Content Pack",
+    summary: pack.summary,
+    videoType: pack.videoType,
+    imageStyle: pack.imageStyle,
+    language: pack.language,
+    thumbnail: {
+      prompt: pack.thumbnail.prompt,
+      textOverlay: pack.thumbnail.textOverlay,
+      compositionNotes: pack.thumbnail.compositionNotes
+    },
+    scenes: pack.scenePrompts.map((scene, index) => ({
+      index: index + 1,
+      sceneRange: scene.sceneRange,
+      timestamp: scene.timestamp,
+      beat: scene.beat,
+      summary: scene.summary,
+      imagePrompt: scene.imagePrompt,
+      cameraAngle: scene.cameraAngle,
+      lighting: scene.lighting,
+      emotion: scene.emotion
+    })),
+    characterBible: pack.characterBible,
+    titles: pack.titles,
+    hashtags: pack.hashtags,
+    keywords: pack.keywords
+  };
+
+  return JSON.stringify(payload, null, 2);
 }
 
 function csvCell(value: string) {
