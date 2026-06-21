@@ -42,6 +42,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background:
@@ -76,6 +80,16 @@ select {
   font: inherit;
 }
 
+a,
+button,
+input,
+textarea,
+select {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
+}
+
 button {
   cursor: pointer;
 }
@@ -83,6 +97,11 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+a:active,
+button:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 ::selection {

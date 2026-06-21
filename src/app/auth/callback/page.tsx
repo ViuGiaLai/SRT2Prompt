@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { Loader2 } from "lucide-react";
 
 export default function AuthCallbackPage() {
@@ -11,7 +12,11 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     async function saveSession() {
-      const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const saved = sessionStorage.getItem("srt2prompt_oauth_hash");
+      const hash = saved || window.location.hash;
+      sessionStorage.removeItem("srt2prompt_oauth_hash");
+
+      const params = new URLSearchParams(hash.replace(/^#/, ""));
       const accessToken = params.get("access_token");
       const refreshToken = params.get("refresh_token");
       const errorDescription = params.get("error_description");
@@ -46,6 +51,16 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-workspace px-5 text-fg">
+      <Script id="save-oauth-hash" strategy="beforeInteractive">
+        {`
+          try {
+            var h = window.location.hash;
+            if (h && h.indexOf('access_token') !== -1) {
+              sessionStorage.setItem('srt2prompt_oauth_hash', h);
+            }
+          } catch(e) {}
+        `}
+      </Script>
       <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 text-center">
         {error ? (
           <>

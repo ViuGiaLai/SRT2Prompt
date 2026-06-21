@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileText, Image, Tags, Youtube } from "lucide-react";
+import { BrandIcon } from "@/components/BrandIcon";
 
 const features = [
   { title: "Scene Prompt Generator", icon: Image },
@@ -13,7 +14,8 @@ export default function HomePage() {
     <main className="min-h-screen bg-workspace text-fg">
       <section className="mx-auto grid min-h-[92vh] max-w-7xl items-center gap-10 px-5 py-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <div className="mb-4 inline-flex rounded-full border border-line bg-panel px-3 py-2 text-sm text-muted">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-2 text-sm text-muted">
+            <BrandIcon size={16} />
             Creator SaaS + storyboard workspace
           </div>
           <h1 className="max-w-3xl text-5xl font-semibold leading-tight lg:text-6xl">
@@ -134,7 +136,10 @@ export default function HomePage() {
 
       <footer className="border-t border-line px-5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-sm text-muted md:flex-row">
-          <div>SRT2Prompt</div>
+          <div className="flex items-center gap-2">
+            <BrandIcon size={16} />
+            <span>SRT2Prompt</span>
+          </div>
           <div className="flex flex-wrap gap-4">
             <Link href="/">Product</Link>
             <Link href="/dashboard/pricing">Pricing</Link>

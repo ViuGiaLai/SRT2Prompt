@@ -12,7 +12,7 @@ type PricingCardProps = {
 
 export function PricingCard({ plan, price, active, recommended = false }: PricingCardProps) {
   return (
-    <Panel className={`flex flex-col ${recommended ? "border-accent" : ""}`}>
+    <Panel className={`flex flex-col transition-transform duration-200 ease-out hover:-translate-y-0.5 ${recommended ? "border-accent" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">{plan}</h2>
@@ -22,7 +22,7 @@ export function PricingCard({ plan, price, active, recommended = false }: Pricin
         <CurrentPlanBadge active={active} />
       </div>
       <div className="mt-5 text-3xl font-semibold">{price}</div>
-      <div className="mt-5 flex-1 rounded-lg border border-line bg-panelSoft p-4 text-sm text-muted">
+      <div className="mt-5 flex-1 rounded-lg border border-line bg-panelSoft p-4 text-sm text-muted transition-colors duration-200 ease-out">
         {plan === "Free" && "Start generating and test the workflow."}
         {plan === "Creator" && "Unlock the core production workflow."}
         {plan === "Pro" && "Unlock the full production toolkit."}

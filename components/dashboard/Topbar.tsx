@@ -12,7 +12,7 @@ export function Topbar({ user }: { user: AuthUser }) {
       </div>
       <Link
         href="/dashboard/generate"
-        className="hidden h-10 items-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-medium text-white transition hover:bg-violet-500 sm:inline-flex"
+        className="hidden h-10 items-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-medium text-white shadow-sm transition-all duration-200 ease-out hover:bg-accent-strong hover:shadow-md active:scale-[0.99] sm:inline-flex"
       >
         <Sparkles size={16} />
         New Generate
@@ -22,7 +22,7 @@ export function Topbar({ user }: { user: AuthUser }) {
         <UserCircle size={24} />
         <span className="max-w-40 truncate">{user.email}</span>
       </div>
-      <Link href="/api/auth/logout" className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-fg" title="Sign out">
+      <Link href="/api/auth/logout" className="rounded-md border border-line p-2 text-muted transition-colors duration-200 ease-out hover:border-accent hover:text-fg" title="Sign out">
         <LogOut size={16} />
       </Link>
     </header>

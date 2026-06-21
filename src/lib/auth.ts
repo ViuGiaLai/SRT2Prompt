@@ -48,7 +48,13 @@ function cookieOptions(maxAge: number) {
   };
 }
 
-export async function signUpWithEmail(input: { name: string; email: string; password: string }) {
+type AuthSession = {
+  user: AuthUser;
+  accessToken: string | undefined;
+  refreshToken: string | undefined;
+};
+
+export async function signUpWithEmail(input: { name: string; email: string; password: string }): Promise<AuthSession> {
   const response = await fetch(`${supabaseUrl()}/auth/v1/signup`, {
     method: "POST",
     headers: authHeaders(),
@@ -62,10 +68,10 @@ export async function signUpWithEmail(input: { name: string; email: string; pass
   const data = (await response.json()) as SupabaseAuthResponse;
   if (!response.ok) throw new Error(authError(data, "Could not create account."));
   if (data.access_token && data.refresh_token) setAuthCookies(data.access_token, data.refresh_token);
-  return normalizeUser(data.user);
+  return { user: normalizeUser(data.user), accessToken: data.access_token, refreshToken: data.refresh_token };
 }
 
-export async function signInWithEmail(input: { email: string; password: string }) {
+export async function signInWithEmail(input: { email: string; password: string }): Promise<AuthSession> {
   const response = await fetch(`${supabaseUrl()}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: authHeaders(),
@@ -81,7 +87,7 @@ export async function signInWithEmail(input: { email: string; password: string }
   }
 
   setAuthCookies(data.access_token, data.refresh_token);
-  return normalizeUser(data.user);
+  return { user: normalizeUser(data.user), accessToken: data.access_token, refreshToken: data.refresh_token };
 }
 
 export async function signOut() {
@@ -154,6 +160,13 @@ export async function requireApiUser() {
   return user;
 }
 
+export function getAppUrl() {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 function authHeaders() {
   const key = supabaseKey();
   return {
@@ -173,7 +186,7 @@ export function setAuthCookies(accessToken: string, refreshToken: string) {
 }
 
 export function getGoogleOAuthUrl() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = getAppUrl();
   const redirectTo = `${appUrl.replace(/\/$/, "")}/auth/callback`;
   const params = new URLSearchParams({
     provider: "google",

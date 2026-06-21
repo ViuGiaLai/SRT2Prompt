@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BarChart3, CreditCard, FileText, History, LayoutDashboard, Settings, Sparkles, Wand2 } from "lucide-react";
+import { BrandIcon } from "@/components/BrandIcon";
 import type { PlanUsage } from "@/src/lib/types";
 
 const items = [
@@ -9,6 +10,7 @@ const items = [
   { href: "/dashboard/templates", label: "Templates", icon: Wand2 },
   { href: "/dashboard/history", label: "History", icon: History },
   { href: "/dashboard/pricing", label: "Pricing", icon: CreditCard },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings }
 ];
 
@@ -29,8 +31,8 @@ export function AppSidebar({ usage }: { usage: PlanUsage }) {
   return (
     <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 border-r border-line bg-workspace p-4 lg:flex lg:flex-col">
       <Link href="/" className="mb-8 flex items-center gap-3 px-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent">
-          <Sparkles size={20} />
+        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-panelSoft ring-1 ring-line">
+          <BrandIcon size={28} />
         </div>
         <div>
           <div className="text-sm font-semibold text-fg">SRT2Prompt</div>

@@ -27,9 +27,9 @@ export default async function SettingsPage() {
           <h2 className="text-lg font-semibold">Billing</h2>
           <div className="mt-4 space-y-3 text-sm">
             <Meta label="Current plan" value={plan} />
-            <Meta label="Payment provider" value="Stripe ready" />
+            <Meta label="Payment provider" value="Lemon Squeezy" />
           </div>
-          <Link href="/dashboard/pricing" className="mt-5 inline-flex rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
+          <Link href="/dashboard/billing" className="mt-5 inline-flex rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong">
             Manage Plan
           </Link>
         </Panel>

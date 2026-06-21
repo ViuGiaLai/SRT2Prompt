@@ -110,6 +110,19 @@ export type PlanUsage = {
   projectLimit: number | null;
 };
 
+export type BillingStatus = "active" | "trialing" | "past_due" | "canceled" | "pending";
+
+export type BillingState = {
+  userId: string;
+  plan: PlanName;
+  status: BillingStatus;
+  priceLabel: string;
+  nextBillingDate: string | null;
+  provider: "lemon-squeezy";
+  manageUrl?: string | null;
+  updatedAt: string;
+};
+
 export type Project = {
   id: string;
   userId: string;
