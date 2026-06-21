@@ -77,6 +77,7 @@ export function GeneratorWorkspace({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const outputPaneRef = useRef<HTMLDivElement | null>(null);
+  const feedbackRef = useRef<HTMLDivElement | null>(null);
   const [extensionDetected, setExtensionDetected] = useState(false);
 
   const canGenerate = useMemo(() => inputText.trim().length >= 10 && !loading, [inputText, loading]);
@@ -96,6 +97,16 @@ export function GeneratorWorkspace({
       });
     });
   }, [loading]);
+
+  useEffect(() => {
+    if (!error && !notice) return;
+    requestAnimationFrame(() => {
+      feedbackRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    });
+  }, [error, notice]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -408,7 +419,7 @@ export function GeneratorWorkspace({
               </Button>
             </div>
             {(error || notice) && (
-              <div className="mt-3 space-y-2">
+              <div ref={feedbackRef} className="mt-3 space-y-2">
                 {error && (
                   <div className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger">
                     {error}

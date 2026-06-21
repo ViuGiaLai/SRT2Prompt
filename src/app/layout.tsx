@@ -14,8 +14,7 @@ export const metadata: Metadata = {
     icon: [{ url: "/icon.ico", type: "image/x-icon" }],
     shortcut: "/icon.ico",
     apple: "/icon.ico"
-  },
-  manifest: "/manifest.webmanifest"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
