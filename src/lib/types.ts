@@ -23,6 +23,8 @@ export type InputType = "srt" | "script";
 
 export type PlanName = "Free" | "Creator" | "Pro";
 
+export type StoryBeat = "Opening" | "Build-up" | "Climax" | "Ending";
+
 export type SubtitleLine = {
   id: string;
   startTime: string;
@@ -40,8 +42,40 @@ export type SceneGroup = {
 export type ScenePrompt = {
   sceneRange: string;
   timestamp: string;
+  beat: StoryBeat;
   summary: string;
   imagePrompt: string;
+  cameraAngle: string;
+  lighting: string;
+  emotion: string;
+};
+
+export type CharacterBible = {
+  name: string;
+  age: string;
+  gender: string;
+  hair: string;
+  clothes: string;
+  personality: string;
+  consistencyNotes: string;
+};
+
+export type TitlePack = {
+  curiosity: string[];
+  fear: string[];
+  question: string[];
+  clickbait: string[];
+};
+
+export type StoryboardScene = {
+  sceneRange: string;
+  timestamp: string;
+  beat: StoryBeat;
+  summary: string;
+  imagePrompt: string;
+  cameraAngle: string;
+  lighting: string;
+  emotion: string;
 };
 
 export type RegenerateSceneOptions = {
@@ -62,9 +96,12 @@ export type ContentPack = {
   videoType: VideoType | string;
   imageStyle: ImageStyle | string;
   language: OutputLanguage | string;
+  characterBible: CharacterBible;
   scenePrompts: ScenePrompt[];
+  storyboard: StoryboardScene[];
   thumbnail: ThumbnailPrompt;
   titles: string[];
+  titlePack: TitlePack;
   description: string;
   hashtags: string[];
   keywords: string[];

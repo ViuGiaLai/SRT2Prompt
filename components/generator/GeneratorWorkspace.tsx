@@ -182,7 +182,7 @@ export function GeneratorWorkspace({ usage }: { usage: PlanUsage }) {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold">Create Content Pack</h1>
-              <p className="mt-1 text-sm text-muted">Paste SRT/script or upload a subtitle file.</p>
+              <p className="mt-1 text-sm text-muted">Paste SRT/script or upload a subtitle file to build character, storyboard, title, and export assets.</p>
             </div>
             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line bg-panelSoft px-3 text-sm text-fg hover:border-accent">
               <FileUp size={16} />
@@ -335,7 +335,7 @@ function LoadingPanel() {
     <Panel className="min-h-[520px]">
       <h2 className="text-xl font-semibold">Turning your script into a creator-ready content pack...</h2>
       <div className="mt-6 space-y-4">
-        {["Analyzing script", "Grouping scenes", "Writing image prompts", "Creating YouTube metadata"].map((item) => (
+        {["Analyzing script", "Building character bible", "Laying out storyboard", "Creating title pack"].map((item) => (
           <div key={item} className="rounded-lg border border-line bg-panelSoft p-4">
             <div className="mb-3 flex items-center gap-3 text-sm">
               <Loader2 className="animate-spin text-accent" size={16} />

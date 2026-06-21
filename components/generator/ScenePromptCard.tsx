@@ -48,8 +48,16 @@ export function ScenePromptCard({
 
       <div className="space-y-3">
         <div>
-          <div className="mb-1 text-xs font-semibold uppercase tracking-normal text-muted">Summary</div>
+          <div className="mb-1 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-normal text-muted">
+            <span>Summary</span>
+            <span className="rounded-full bg-panelSoft px-2 py-1 normal-case text-fg">{scene.beat}</span>
+          </div>
           <p className="text-sm leading-6 text-fg">{scene.summary}</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Meta label="Camera" value={scene.cameraAngle} />
+          <Meta label="Lighting" value={scene.lighting} />
+          <Meta label="Emotion" value={scene.emotion} />
         </div>
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-normal text-muted">
@@ -68,5 +76,14 @@ export function ScenePromptCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-line bg-panelSoft p-3">
+      <div className="text-[11px] uppercase tracking-normal text-muted">{label}</div>
+      <div className="mt-1 text-sm text-fg">{value}</div>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import type { ContentPack, PlanName } from "@/src/lib/types";
 import { CopyButton } from "./CopyButton";
 import { ScenePromptCard } from "./ScenePromptCard";
 
-const tabs = ["Overview", "Scene Prompts", "Thumbnail", "Titles", "Description", "Hashtags", "Export"] as const;
+const tabs = ["Overview", "Character Bible", "Storyboard", "Scene Prompts", "Thumbnail", "Titles", "Description", "Hashtags", "Export"] as const;
 
 export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPack | null; plan?: PlanName; projectId?: string }) {
   const [active, setActive] = useState<(typeof tabs)[number]>("Overview");
@@ -182,6 +182,48 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
           <SummaryCard label="Video Type" value={String(currentPack.videoType)} />
           <SummaryCard label="Scenes" value={`${currentPack.scenePrompts.length} scenes`} />
           <SummaryCard label="Style" value={String(currentPack.imageStyle)} />
+          <SummaryCard label="Main Character" value={currentPack.characterBible.name} />
+          <SummaryCard label="Character Memory" value={currentPack.characterBible.consistencyNotes} />
+        </div>
+      )}
+
+      {active === "Character Bible" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SummaryCard label="Name" value={currentPack.characterBible.name} />
+          <SummaryCard label="Age" value={currentPack.characterBible.age} />
+          <SummaryCard label="Gender" value={currentPack.characterBible.gender} />
+          <SummaryCard label="Hair" value={currentPack.characterBible.hair} />
+          <SummaryCard label="Clothes" value={currentPack.characterBible.clothes} />
+          <SummaryCard label="Personality" value={currentPack.characterBible.personality} />
+          <div className="sm:col-span-2">
+            <SummaryCard label="Consistency Notes" value={currentPack.characterBible.consistencyNotes} />
+          </div>
+        </div>
+      )}
+
+      {active === "Storyboard" && (
+        <div className="space-y-4">
+          {currentPack.storyboard.map((scene) => (
+            <div key={`${scene.sceneRange}-${scene.timestamp}`} className="rounded-lg border border-line bg-panelSoft p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs text-muted">Scene {scene.sceneRange}</div>
+                  <div className="mt-1 text-sm font-semibold text-fg">{scene.beat}</div>
+                  <div className="mt-1 text-xs text-muted">{scene.timestamp}</div>
+                </div>
+                <CopyButton text={`${scene.summary}\n${scene.imagePrompt}`} label="Copy Scene" />
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <SummaryCard label="Camera" value={scene.cameraAngle} />
+                <SummaryCard label="Lighting" value={scene.lighting} />
+                <SummaryCard label="Emotion" value={scene.emotion} />
+              </div>
+              <div className="mt-4 space-y-3">
+                <OutputBlock title="Summary" content={scene.summary} />
+                <OutputBlock title="Image Prompt" content={scene.imagePrompt} />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -216,35 +258,18 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       )}
 
       {active === "Titles" && (
-        <div className="space-y-3">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() =>
-              setCurrentPack((current) =>
-                current
-                  ? {
-                      ...current,
-                      titles: current.titles.map((title) =>
-                        title.endsWith("?") ? title : `${title.replace(/\.$/, "")}?`
-                      )
-                    }
-                  : current
-              )
-            }
-          >
-            Rewrite Titles
-          </Button>
-          {currentPack.titles.map((title, index) => (
-            <div key={title} className="flex items-center justify-between gap-3 rounded-lg border border-line bg-panelSoft p-3">
-              <div>
-                <div className="text-xs text-muted">Title {index + 1}</div>
-                <div className="text-sm font-medium">{title}</div>
-              </div>
-              <CopyButton text={title} />
-            </div>
-          ))}
+        <div className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-2">
+            <TitleGroupCard title="Curiosity" titles={currentPack.titlePack.curiosity} />
+            <TitleGroupCard title="Fear" titles={currentPack.titlePack.fear} />
+            <TitleGroupCard title="Question" titles={currentPack.titlePack.question} />
+            <TitleGroupCard title="Clickbait" titles={currentPack.titlePack.clickbait} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <CopyButton text={currentPack.titles.join("\n")} label="Copy All Titles" />
+            <CopyButton text={currentPack.titlePack.curiosity.join("\n")} label="Copy Curiosity" />
+            <CopyButton text={currentPack.titlePack.fear.join("\n")} label="Copy Fear" />
+          </div>
         </div>
       )}
 
@@ -367,6 +392,27 @@ function OutputBlock({ title, content }: { title: string; content: string }) {
     <div className="rounded-lg border border-line bg-panelSoft p-4">
       <div className="mb-2 text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
       <p className="text-sm leading-6 text-fg">{content}</p>
+    </div>
+  );
+}
+
+function TitleGroupCard({ title, titles }: { title: string; titles: string[] }) {
+  return (
+    <div className="rounded-lg border border-line bg-panelSoft p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-normal text-muted">{title}</div>
+          <div className="mt-1 text-sm text-fg">{titles.length} titles</div>
+        </div>
+        <CopyButton text={titles.join("\n")} label={`Copy ${title}`} />
+      </div>
+      <div className="mt-4 space-y-2">
+        {titles.map((item, index) => (
+          <div key={`${title}-${index}`} className="rounded-md border border-line bg-panel p-3 text-sm text-fg">
+            {item}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

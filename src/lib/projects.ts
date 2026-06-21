@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import postgres from "postgres";
-import type { ContentPack, InputType, Project } from "./types";
+import type { CharacterBible, ContentPack, InputType, Project, StoryBeat, StoryboardScene, TitlePack } from "./types";
 
 const connectionString = process.env.DATABASE_URL;
 const hasUsableDatabaseUrl =
@@ -267,7 +267,7 @@ function rowToProject(row: ProjectRow): Project {
     imageStyle: row.image_style,
     language: row.language,
     sceneCount: row.scene_count,
-    contentPack: row.content_pack,
+    contentPack: normalizeContentPack(row.content_pack),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString()
   };
@@ -346,7 +346,12 @@ async function readLocalProjects(): Promise<Project[]> {
   try {
     const content = await readFile(localStorePath, "utf8");
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((project) => ({
+          ...project,
+          contentPack: normalizeContentPack(project.contentPack)
+        }))
+      : [];
   } catch {
     return [];
   }
@@ -355,4 +360,75 @@ async function readLocalProjects(): Promise<Project[]> {
 async function writeLocalProjects(projects: Project[]) {
   await mkdir(path.dirname(localStorePath), { recursive: true });
   await writeFile(localStorePath, JSON.stringify(projects, null, 2), "utf8");
+}
+
+function normalizeContentPack(contentPack: Partial<ContentPack> | undefined): ContentPack {
+  const fallbackCharacterBible: CharacterBible = {
+    name: "Main Character",
+    age: "Adult",
+    gender: "Unspecified",
+    hair: "Consistent dark hair",
+    clothes: "Scene-matched wardrobe",
+    personality: "Stable visual identity",
+    consistencyNotes: "Keep the same face, hair, clothing, and proportions across every scene."
+  };
+
+  const emptyStoryScene: StoryboardScene = {
+    sceneRange: "1",
+    timestamp: "Script segment",
+    beat: "Opening",
+    summary: "",
+    imagePrompt: "",
+    cameraAngle: "Wide establishing shot",
+    lighting: "Cinematic lighting",
+    emotion: "Curious"
+  };
+
+  const titlePack: TitlePack = {
+    curiosity: contentPack?.titlePack?.curiosity || [],
+    fear: contentPack?.titlePack?.fear || [],
+    question: contentPack?.titlePack?.question || [],
+    clickbait: contentPack?.titlePack?.clickbait || []
+  };
+  const scenePrompts = (contentPack?.scenePrompts || []).map((scene, index) => ({
+    ...emptyStoryScene,
+    ...scene,
+    beat: scene.beat || emptyStoryScene.beat,
+    cameraAngle: scene.cameraAngle || emptyStoryScene.cameraAngle,
+    lighting: scene.lighting || emptyStoryScene.lighting,
+    emotion: scene.emotion || emptyStoryScene.emotion,
+    sceneRange: scene.sceneRange || String(index + 1),
+    timestamp: scene.timestamp || emptyStoryScene.timestamp
+  }));
+
+  const storyboard = (contentPack?.storyboard || scenePrompts).map((scene, index) => ({
+    ...emptyStoryScene,
+    ...scene,
+    beat: scene.beat || emptyStoryScene.beat,
+    cameraAngle: scene.cameraAngle || emptyStoryScene.cameraAngle,
+    lighting: scene.lighting || emptyStoryScene.lighting,
+    emotion: scene.emotion || emptyStoryScene.emotion,
+    sceneRange: scene.sceneRange || String(index + 1),
+    timestamp: scene.timestamp || emptyStoryScene.timestamp
+  }));
+
+  return {
+    summary: contentPack?.summary || "Generated content pack summary.",
+    videoType: contentPack?.videoType || "Horror Story",
+    imageStyle: contentPack?.imageStyle || "Dark Cinematic",
+    language: contentPack?.language || "English",
+    characterBible: contentPack?.characterBible || fallbackCharacterBible,
+    scenePrompts,
+    storyboard,
+    thumbnail: contentPack?.thumbnail || {
+      prompt: "",
+      textOverlay: "",
+      compositionNotes: ""
+    },
+    titlePack,
+    titles: contentPack?.titles || [...titlePack.curiosity, ...titlePack.fear, ...titlePack.question, ...titlePack.clickbait],
+    description: contentPack?.description || "",
+    hashtags: contentPack?.hashtags || [],
+    keywords: contentPack?.keywords || []
+  };
 }

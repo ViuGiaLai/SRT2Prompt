@@ -20,9 +20,16 @@ export default function AuthCallbackPage() {
       const accessToken = params.get("access_token");
       const refreshToken = params.get("refresh_token");
       const errorDescription = params.get("error_description");
+      const type = params.get("type");
 
       if (errorDescription) {
         setError(errorDescription);
+        return;
+      }
+
+      if (type === "recovery") {
+        sessionStorage.setItem("srt2prompt_oauth_hash", hash);
+        router.replace("/auth/reset-password");
         return;
       }
 

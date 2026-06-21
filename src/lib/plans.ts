@@ -181,15 +181,30 @@ export function assertCanSaveProject(usage: PlanUsage) {
   }
 }
 
-export function normalizePackForPlan<T extends { titles: string[]; thumbnail: { prompt: string; textOverlay: string; compositionNotes: string }; keywords: string[] }>(
+export function normalizePackForPlan<T extends { titles: string[]; titlePack?: { curiosity: string[]; fear: string[]; question: string[]; clickbait: string[] }; thumbnail: { prompt: string; textOverlay: string; compositionNotes: string }; keywords: string[] }>(
   pack: T,
   plan: PlanName
 ) {
   const limits = PLAN_LIMITS[plan];
+  const titleLimit = limits.titleLimit ?? pack.titles.length;
+  const splitLimit = titleLimit >= 0 ? titleLimit : 0;
+  const base = Math.floor(splitLimit / 4);
+  const remainder = splitLimit % 4;
+  const limitsByGroup = [base + (remainder > 0 ? 1 : 0), base + (remainder > 1 ? 1 : 0), base + (remainder > 2 ? 1 : 0), base];
+  const slicePack = (items: string[], maxCount: number) => items.slice(0, Math.min(items.length, maxCount));
+  const titlePack = pack.titlePack
+    ? {
+        curiosity: slicePack(pack.titlePack.curiosity, limitsByGroup[0]),
+        fear: slicePack(pack.titlePack.fear, limitsByGroup[1]),
+        question: slicePack(pack.titlePack.question, limitsByGroup[2]),
+        clickbait: slicePack(pack.titlePack.clickbait, limitsByGroup[3])
+      }
+    : undefined;
   return {
     ...pack,
     thumbnail: limits.thumbnail ? pack.thumbnail : { prompt: "", textOverlay: "", compositionNotes: "" },
     titles: limits.titleLimit ? pack.titles.slice(0, limits.titleLimit) : pack.titles,
+    titlePack,
     keywords: limits.keywords ? pack.keywords : []
   };
 }
