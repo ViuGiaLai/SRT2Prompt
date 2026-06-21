@@ -1,0 +1,30 @@
+import Link from "next/link";
+import { LogOut, Search, Sparkles, UserCircle } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
+import type { AuthUser } from "@/src/lib/auth";
+
+export function Topbar({ user }: { user: AuthUser }) {
+  return (
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-line bg-workspace/95 px-4 backdrop-blur">
+      <div className="flex min-w-0 flex-1 items-center gap-3 rounded-md border border-line bg-panel px-3 py-2 text-sm text-muted">
+        <Search size={16} />
+        <span className="truncate">Search projects...</span>
+      </div>
+      <Link
+        href="/dashboard/generate"
+        className="hidden h-10 items-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-medium text-white transition hover:bg-violet-500 sm:inline-flex"
+      >
+        <Sparkles size={16} />
+        New Generate
+      </Link>
+      <ThemeToggle />
+      <div className="hidden min-w-0 items-center gap-2 text-sm text-muted md:flex">
+        <UserCircle size={24} />
+        <span className="max-w-40 truncate">{user.email}</span>
+      </div>
+      <Link href="/api/auth/logout" className="rounded-md border border-line p-2 text-muted hover:border-accent hover:text-white" title="Sign out">
+        <LogOut size={16} />
+      </Link>
+    </header>
+  );
+}
