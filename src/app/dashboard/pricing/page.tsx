@@ -14,9 +14,9 @@ export default async function PricingPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <PricingCard plan="Free" price="$0" active={currentPlan === "Free"} />
-        <PricingCard plan="Creator" price="$5/month" active={currentPlan === "Creator"} recommended />
-        <PricingCard plan="Pro" price="$9/month" active={currentPlan === "Pro"} />
+        <PricingCard plan="Free" price="$0" active={currentPlan === "Free"} currentPlan={currentPlan} />
+        <PricingCard plan="Creator" price="$5/month" active={currentPlan === "Creator"} currentPlan={currentPlan} recommended />
+        <PricingCard plan="Pro" price="$9/month" active={currentPlan === "Pro"} currentPlan={currentPlan} />
       </div>
     </div>
   );

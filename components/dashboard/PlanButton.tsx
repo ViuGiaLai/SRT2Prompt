@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PlanName } from "@/src/lib/types";
 
+const PLAN_ORDER: PlanName[] = ["Free", "Creator", "Pro"];
+
 export function PlanButton({ plan, currentPlan }: { plan: PlanName; currentPlan: PlanName }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const active = plan === currentPlan;
+  const isDowngrade = PLAN_ORDER.indexOf(plan) < PLAN_ORDER.indexOf(currentPlan);
 
   async function updatePlan() {
     if (active || loading) return;
@@ -36,7 +39,7 @@ export function PlanButton({ plan, currentPlan }: { plan: PlanName; currentPlan:
           : "border border-accent bg-accent text-white hover:bg-violet-500"
       }`}
     >
-      {active ? "Current plan" : loading ? "Updating..." : plan === "Free" ? "Use Free" : `Switch to ${plan}`}
+      {active ? "Current Plan" : loading ? "Updating..." : isDowngrade ? "Downgrade" : "Upgrade"}
     </button>
   );
 }

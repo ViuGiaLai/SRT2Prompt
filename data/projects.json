@@ -1,0 +1,265 @@
+[
+  {
+    "id": "6c5e3438-2317-4665-bd52-5885f5479b84",
+    "userId": "3f09ab7d-22c2-496c-adb2-892efa5678b5",
+    "title": "The One Rule I Broke After Midnight",
+    "inputText": "1\n00:00:00,000 --> 00:00:05,000\nI worked the night shift at an old hospital.\n\n2\n00:00:05,000 --> 00:00:10,000\nMy boss gave me a strange list of rules.\n\n3\n00:00:10,000 --> 00:00:16,000\nThe first rule said never answer the phone after midnight.",
+    "inputType": "srt",
+    "videoType": "Horror Story",
+    "imageStyle": "Dark Cinematic",
+    "language": "English",
+    "sceneCount": 1,
+    "contentPack": {
+      "summary": "A night shift worker at an old hospital receives a chilling list of rules, with the first rule forbidding answering the phone after midnight, hinting at a supernatural threat lurking in the hospital's dark corridors.",
+      "videoType": "Horror Story",
+      "imageStyle": "Dark Cinematic",
+      "language": "English",
+      "characterBible": {
+        "name": "Main Character",
+        "age": "Adult",
+        "gender": "Unknown",
+        "hair": "Short dark hair",
+        "clothes": "Slightly worn hospital uniform or practical work clothes suitable for a night shift.",
+        "personality": "Observant, apprehensive, trying to follow rules.",
+        "consistencyNotes": "Keep the same face, hair, and clothes across every scene."
+      },
+      "scenePrompts": [
+        {
+          "sceneRange": "1-3",
+          "timestamp": "00:00:00,000 --> 00:00:16,000",
+          "beat": "Opening",
+          "summary": "The night shift worker at an old, dimly lit hospital reflects on the strange rules given by their boss, specifically the ominous instruction about not answering the phone after midnight.",
+          "imagePrompt": "A solitary adult character, gender neutral, with short dark hair, wearing a slightly worn hospital uniform, stands in a dimly lit, empty corridor of an old, gothic hospital at night. Dust motes float in the faint light filtering from a distant window or a single flickering overhead bulb. The atmosphere is heavy with silence and a sense of foreboding. The character's face shows a subtle expression of unease and contemplation. Dark cinematic style, wide shot, deep shadows, high contrast.",
+          "cameraAngle": "Wide shot",
+          "lighting": "Dim, high-contrast, moody cinematic lighting with deep shadows.",
+          "emotion": "Tense, apprehensive, isolated"
+        }
+      ],
+      "storyboard": [
+        {
+          "sceneRange": "1-3",
+          "timestamp": "00:00:00,000 --> 00:00:16,000",
+          "beat": "Opening",
+          "summary": "The night shift worker at an old, dimly lit hospital reflects on the strange rules given by their boss, specifically the ominous instruction about not answering the phone after midnight.",
+          "imagePrompt": "A solitary adult character, gender neutral, with short dark hair, wearing a slightly worn hospital uniform, stands in a dimly lit, empty corridor of an old, gothic hospital at night. Dust motes float in the faint light filtering from a distant window or a single flickering overhead bulb. The atmosphere is heavy with silence and a sense of foreboding. The character's face shows a subtle expression of unease and contemplation. Dark cinematic style, wide shot, deep shadows, high contrast.",
+          "cameraAngle": "Wide shot",
+          "lighting": "Dim, high-contrast, moody cinematic lighting with deep shadows.",
+          "emotion": "Tense, apprehensive, isolated"
+        }
+      ],
+      "thumbnail": {
+        "prompt": "A close-up of an old, rotary phone, shrouded in deep shadows, barely visible on a dusty desk in a dark hospital room. The phone's receiver is slightly ajar, or it's ringing with a faint, eerie glow from the dial. The background is blurred, hinting at an empty, unsettling hospital corridor. Dark cinematic style, high contrast, focus on the phone as a symbol of dread.",
+        "textOverlay": "NEVER ANSWER",
+        "compositionNotes": "Focus on the ominous phone, using high contrast and deep shadows. Text overlay should be stark and attention-grabbing, placed to emphasize the phone."
+      },
+      "titlePack": {
+        "curiosity": [
+          "The One Rule I Broke After Midnight",
+          "My Hospital Night Shift Rules Were Terrifying",
+          "What Happens When You Answer the Midnight Call?",
+          "The Hospital's Darkest Secret: Rule #1",
+          "They Said Never Answer After Midnight..."
+        ],
+        "fear": [
+          "The Phone Rings After Midnight (Horror Story)",
+          "Working the Night Shift at a Haunted Hospital",
+          "Don't Answer the Phone. Ever.",
+          "My Boss's Rules Will Give You Nightmares",
+          "The Midnight Call: A True Horror Story"
+        ],
+        "question": [
+          "Would You Break This Hospital Rule?",
+          "Why Can't I Answer the Phone After Midnight?",
+          "What Happens If You Don't Follow the Rules?",
+          "Is Answering the Phone a Death Sentence?",
+          "What's the Scariest Rule You've Ever Heard?"
+        ],
+        "clickbait": [
+          "I Answered the Midnight Call (BIG MISTAKE)",
+          "This Hospital Rule Saved My Life (Almost)",
+          "You WON'T Believe What Happened After Midnight",
+          "NEVER Work a Hospital Night Shift (My Story)",
+          "The Midnight Phone Call That Changed Everything"
+        ]
+      },
+      "intelligence": {
+        "storyType": "Horror Story",
+        "storyEngine": {
+          "characters": [
+            "Main Character"
+          ],
+          "emotion": "Suspense, unease, dread",
+          "timeline": [
+            "Opening: Introduces the night shift worker, the old hospital setting, and the ominous rules, specifically the phone rule.",
+            "Build-up: The character experiences strange occurrences, hears the phone, feels a growing sense of dread.",
+            "Climax: The phone rings past midnight, forcing a decision or a confrontation with the unknown.",
+            "Ending: The character faces the consequences or discovers a horrifying truth."
+          ],
+          "structure": "Opening -> Build-up -> Climax -> Ending"
+        },
+        "sceneEngine": {
+          "beats": [
+            "Opening",
+            "Build-up",
+            "Climax",
+            "Ending"
+          ],
+          "notes": [
+            "Use camera, lighting, composition, and emotion per scene to build tension. Focus on atmosphere and implied threats."
+          ]
+        },
+        "characterMemory": {
+          "name": "Main Character",
+          "age": "Adult",
+          "gender": "Unspecified",
+          "hair": "Short dark hair",
+          "clothes": "Same outfit throughout",
+          "personality": "Consistent and readable",
+          "consistencyNotes": "Keep the same face, hair, clothing, and proportions across every scene."
+        },
+        "keywordPack": {
+          "primary": "night shift horror",
+          "secondary": [
+            "hospital ghost story",
+            "creepy rules",
+            "after midnight calls",
+            "faceless horror narration",
+            "scary hospital stories",
+            "unexplained phenomena video"
+          ],
+          "longTail": [
+            "faceless horror narration",
+            "scary hospital stories",
+            "unexplained phenomena video",
+            "night shift horror Horror Story Main Character workflow",
+            "horror story content pack"
+          ]
+        },
+        "descriptionEngine": {
+          "seoDensity": "Balanced",
+          "cta": "Subscribe for more chilling tales and mysterious stories!",
+          "timestampNote": "Add timestamps for each major beat to enhance viewer experience.",
+          "hashtagPlacement": "At the end of the description for readability."
+        },
+        "hashtagEngine": {
+          "hashtags": [
+            "#horrorstory",
+            "#scarystories",
+            "#creepyhospital",
+            "#nightshift",
+            "#unexplained"
+          ],
+          "sourceNotes": "Derived from content theme, setting, and common horror tropes."
+        },
+        "competitorEngine": [
+          {
+            "name": "Mr Nightmare",
+            "titlePatterns": [
+              "Curiosity",
+              "Fear",
+              "Suspense"
+            ],
+            "thumbnailPatterns": [
+              "Dark subject",
+              "High contrast",
+              "Simple composition"
+            ],
+            "keywords": [
+              "horror story",
+              "nightmare",
+              "creepy"
+            ],
+            "uploadTime": "Evening",
+            "descriptionPattern": "Short intro, story hook, simple CTA"
+          }
+        ],
+        "viralScore": {
+          "seo": 93.5,
+          "ctr": 99,
+          "emotion": 91,
+          "curiosity": 97,
+          "competition": 66,
+          "trend": 72,
+          "overall": 86,
+          "notes": [
+            "Strong hook and immediate tension",
+            "High curiosity factor with mysterious rules",
+            "Good potential for audience engagement through suspense."
+          ]
+        },
+        "imagePromptPresets": {
+          "flux": "Dark Cinematic visual for Flux with strong subject separation, clean edges, and cinematic lighting.",
+          "midjourney": "Dark Cinematic visual for Midjourney with cinematic detail, composition, and emotional contrast.",
+          "chatgpt": "Dark Cinematic visual for ChatGPT Image with a clear subject, scene context, and readable layout.",
+          "leonardo": "Dark Cinematic visual for Leonardo with sharp focus, contrast, and thumbnail clarity.",
+          "gemini": "Dark Cinematic visual for Gemini with cohesive scene design and consistent character style."
+        },
+        "apiHooks": [
+          "Gemini API",
+          "YouTube Data API",
+          "YouTube Search Suggest",
+          "Google Trends API",
+          "Supabase"
+        ],
+        "sourceStatus": {
+          "youtubeData": "fallback",
+          "youtubeSuggest": "fallback",
+          "trends": "fallback",
+          "notion": "fallback",
+          "drive": "fallback"
+        }
+      },
+      "titles": [
+        "The One Rule I Broke After Midnight",
+        "My Hospital Night Shift Rules Were Terrifying",
+        "What Happens When You Answer the Midnight Call?",
+        "The Hospital's Darkest Secret: Rule #1",
+        "They Said Never Answer After Midnight...",
+        "The Phone Rings After Midnight (Horror Story)",
+        "Working the Night Shift at a Haunted Hospital",
+        "Don't Answer the Phone. Ever.",
+        "My Boss's Rules Will Give You Nightmares",
+        "The Midnight Call: A True Horror Story",
+        "Would You Break This Hospital Rule?",
+        "Why Can't I Answer the Phone After Midnight?",
+        "What Happens If You Don't Follow the Rules?",
+        "Is Answering the Phone a Death Sentence?",
+        "What's the Scariest Rule You've Ever Heard?",
+        "I Answered the Midnight Call (BIG MISTAKE)",
+        "This Hospital Rule Saved My Life (Almost)",
+        "You WON'T Believe What Happened After Midnight",
+        "NEVER Work a Hospital Night Shift (My Story)",
+        "The Midnight Phone Call That Changed Everything"
+      ],
+      "description": "Step into the chilling world of a night shift worker at an old hospital, where the rules aren't just for safety, but for survival. In this terrifying horror story, our protagonist recounts the ominous instructions from their boss, especially the first, most unsettling rule: 'Never answer the phone after midnight.' What secrets does this ancient hospital hold, and what lurks in the shadows, waiting for that forbidden call? Prepare for a journey into the unknown where every ring could mean impending dread.\n\n🔔 Subscribe for more chilling tales and mysterious stories!",
+      "hashtags": [
+        "#horrorstory",
+        "#scarystories",
+        "#creepyhospital",
+        "#nightshift",
+        "#unexplained",
+        "#ghoststory",
+        "#supernatural",
+        "#mystery",
+        "#rules",
+        "#aftermidnight",
+        "#nightshifthorror",
+        "#hospitalghoststory"
+      ],
+      "keywords": [
+        "hospital horror",
+        "night shift scary story",
+        "unexplained rules",
+        "night shift horror",
+        "hospital ghost story",
+        "creepy rules",
+        "after midnight calls",
+        "faceless horror narration",
+        "scary hospital stories",
+        "unexplained phenomena video"
+      ]
+    },
+    "createdAt": "2026-06-22T01:33:24.657Z",
+    "updatedAt": "2026-06-22T01:33:24.657Z"
+  }
+]

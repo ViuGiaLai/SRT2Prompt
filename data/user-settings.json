@@ -2,6 +2,12 @@
   "3f09ab7d-22c2-496c-adb2-892efa5678b5": {
     "defaultVideoType": "Horror Story",
     "defaultImageStyle": "Dark Cinematic",
-    "youtubeChannelId": ""
+    "youtubeChannelId": "",
+    "recentVideoTypes": [
+      "Horror Story"
+    ],
+    "recentImageStyles": [
+      "Dark Cinematic"
+    ]
   }
 }

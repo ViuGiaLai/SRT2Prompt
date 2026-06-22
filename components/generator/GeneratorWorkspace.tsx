@@ -408,6 +408,27 @@ export function GeneratorWorkspace({
               )})}
             </div>
 
+            <div className="hidden xl:block">
+              <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-accent/30 bg-gradient-to-r from-accent/15 via-panelSoft to-panel px-3 py-2.5 ring-1 ring-accent/15">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Sparkles size={14} className="shrink-0 text-accent" />
+                  <span className="text-xs font-semibold text-fg">AI image generation</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                    {extensionDetected ? "Ready" : "Not ready"}
+                  </span>
+                </div>
+                <a
+                  href="#export"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
+                  }}
+                  className={`shrink-0 rounded-md border border-transparent bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-strong ${extensionDetected ? "animate-pulse" : ""}`}
+                >
+                  Open
+                </a>
+              </div>
+            </div>
             <div className="sticky bottom-16 z-10 flex flex-wrap gap-3 rounded-lg border border-line bg-panel/95 p-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
               <Button type="button" size="lg" disabled={!canGenerate} onClick={() => void generate()}>
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
@@ -437,30 +458,6 @@ export function GeneratorWorkspace({
       </div>
 
       <div ref={outputPaneRef} className="scroll-mt-24">
-        <div className="pointer-events-none fixed right-4 top-24 z-30 hidden w-80 xl:block">
-          <div className="pointer-events-auto rounded-xl border border-accent/30 bg-gradient-to-br from-accent/15 via-panelSoft to-panel p-3 shadow-2xl ring-1 ring-accent/15 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">AI image generation</div>
-                <div className="truncate text-sm text-muted">Quick access while you work.</div>
-              </div>
-              <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
-                {extensionDetected ? "Ready" : "Not ready"}
-              </span>
-            </div>
-            <a
-              href="#export"
-              onClick={(event) => {
-                event.preventDefault();
-                window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
-              }}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-accent px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong hover:shadow-md ${extensionDetected ? "animate-pulse" : ""}`}
-            >
-              <Sparkles size={16} />
-              Open AI image generation
-            </a>
-          </div>
-        </div>
         <div className="pointer-events-none fixed inset-x-4 bottom-20 z-30 xl:hidden">
           <div className="pointer-events-auto rounded-xl border border-accent/30 bg-gradient-to-r from-accent/15 via-panelSoft to-panel p-3 shadow-2xl ring-1 ring-accent/15 backdrop-blur">
             <div className="flex items-center justify-between gap-3">

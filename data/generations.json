@@ -2,6 +2,20 @@
   {
     "userId": "3f09ab7d-22c2-496c-adb2-892efa5678b5",
     "projectId": null,
+    "summary": "A night shift worker at an old hospital receives a chilling list of rules, with the first rule forbidding answering the phone after midnight, hinting at a supernatural threat lurking in the hospital's dark corridors.",
+    "videoType": "Horror Story",
+    "imageStyle": "Dark Cinematic",
+    "language": "English",
+    "sceneCount": 1,
+    "subtitleLines": 3,
+    "status": "Completed",
+    "error": null,
+    "id": "19345871-7a92-40b4-8706-07950e61b90a",
+    "createdAt": "2026-06-22T01:32:15.808Z"
+  },
+  {
+    "userId": "3f09ab7d-22c2-496c-adb2-892efa5678b5",
+    "projectId": null,
     "summary": "Generation failed",
     "videoType": "Horror Story",
     "imageStyle": "Dark Cinematic",

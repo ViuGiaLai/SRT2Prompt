@@ -8,12 +8,13 @@ type PricingCardProps = {
   plan: PlanName;
   price: string;
   active: boolean;
+  currentPlan: PlanName;
   recommended?: boolean;
 };
 
-export function PricingCard({ plan, price, active, recommended = false }: PricingCardProps) {
+export function PricingCard({ plan, price, active, currentPlan, recommended = false }: PricingCardProps) {
   return (
-    <Panel className={`flex flex-col transition-transform duration-200 ease-out hover:-translate-y-0.5 ${recommended ? "border-accent" : ""}`}>
+    <Panel className={`flex flex-col transition-transform duration-200 ease-out hover:-translate-y-0.5 ${active ? "border-accent" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">{plan}</h2>
@@ -35,7 +36,7 @@ export function PricingCard({ plan, price, active, recommended = false }: Pricin
         </ul>
       </div>
       <div className="mt-5">
-        <UpgradeButton plan={plan} active={active} />
+        <UpgradeButton plan={plan} active={active} currentPlan={currentPlan} />
       </div>
     </Panel>
   );
