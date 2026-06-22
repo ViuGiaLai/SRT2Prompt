@@ -1,13 +1,41 @@
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, Loader2, Save, Sparkles } from "lucide-react";
+import {
+  FileUp,
+  Loader2,
+  Save,
+  Sparkles,
+  Play,
+  FileText,
+  BookOpen,
+  Film,
+  Search,
+  Image,
+  ArrowRight,
+  RefreshCw
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { IMAGE_STYLES, OUTPUT_LANGUAGES, SCENE_GROUPINGS, VIDEO_TYPES } from "@/src/lib/constants";
 import { PLAN_LIMITS } from "@/src/lib/plan-config";
-import type { ContentPack, GenerateOptions, OutputLanguage, PlanUsage, SceneGrouping } from "@/src/lib/types";
+import type { ContentPack, GenerateOptions, OutputLanguage, PlanUsage, SceneGrouping, ScenePrompt, CharacterBible, ThumbnailPrompt } from "@/src/lib/types";
 import { OutputTabs } from "./OutputTabs";
+
+// React Flow Imports
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  Handle,
+  Position,
+  Node,
+  Edge,
+  MarkerType,
+  useNodesState,
+  useEdgesState
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
 const sampleSrt = `1
 00:00:00,000 --> 00:00:05,000
@@ -38,6 +66,113 @@ const outputOptions: Array<{ key: OutputOption; label: string }> = [
   { key: "includeKeywords", label: "Generate keywords" }
 ];
 
+type NodeStatus = "idle" | "generating" | "completed" | "error" | "out_of_sync";
+
+// Custom Node Component for React Flow
+function WorkflowNode({
+  data
+}: {
+  data: {
+    label: string;
+    description: string;
+    icon: any;
+    status: NodeStatus;
+    onRun: () => void;
+    canRun: boolean;
+  };
+}) {
+  const Icon = data.icon;
+  const statusLabel = {
+    idle: "Idle",
+    generating: "Running...",
+    completed: "Ready",
+    out_of_sync: "Outdated",
+    error: "Error"
+  };
+
+  return (
+    <div className={`relative px-4 py-3 rounded-lg border bg-panel transition-all min-w-[200px] shadow-lg ${
+      data.status === "generating" ? "border-accent ring-1 ring-accent animate-pulse" :
+      data.status === "completed" ? "border-success bg-success/5" :
+      data.status === "out_of_sync" ? "border-warning bg-warning/5" : "border-line bg-panelSoft/50"
+    }`}>
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-accent" />
+      
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-md ${
+          data.status === "completed" ? "bg-success/15 text-success" :
+          data.status === "generating" ? "bg-accent/15 text-accent animate-spin" :
+          data.status === "out_of_sync" ? "bg-warning/15 text-warning" : "bg-panelSoft text-muted"
+        }`}>
+          {Icon && <Icon size={18} />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold text-fg truncate">{data.label}</div>
+          <div className="text-[10px] text-muted truncate mt-0.5">{data.description}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line/50 pt-2 text-[10px]">
+        <div className="flex items-center gap-1 font-medium">
+          <span className={`h-1.5 w-1.5 rounded-full ${
+            data.status === "completed" ? "bg-success" :
+            data.status === "generating" ? "bg-accent animate-ping" :
+            data.status === "out_of_sync" ? "bg-warning" : "bg-muted"
+          }`} />
+          <span className={`uppercase tracking-wider ${
+            data.status === "completed" ? "text-success" :
+            data.status === "generating" ? "text-accent" :
+            data.status === "out_of_sync" ? "text-warning" : "text-muted"
+          }`}>
+            {statusLabel[data.status]}
+          </span>
+        </div>
+
+        {data.onRun && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              Promise.resolve(data.onRun()).catch((err) => {
+                console.error("Workflow node execution failed:", err);
+              });
+            }}
+            disabled={!data.canRun || data.status === "generating"}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold transition ${
+              data.status === "generating"
+                ? "bg-accent/25 text-accent cursor-not-allowed"
+                : "bg-accent hover:bg-accent-strong text-white"
+            }`}
+          >
+            {data.status === "generating" ? <Loader2 size={10} className="animate-spin" /> : <Play size={10} fill="currentColor" />}
+            {data.status === "completed" ? "Regen" : "Run"}
+          </button>
+        )}
+      </div>
+
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-accent" />
+    </div>
+  );
+}
+
+const nodeTypes = {
+  workflowNode: WorkflowNode
+};
+
+const FRIENDLY_LABELS: Record<string, string> = {
+  platform: "Platform",
+  target_audience: "Audience",
+  tone: "Tone",
+  narrator_style: "Narrator style"
+};
+
+function getFriendlyLabel(key: string): string {
+  if (FRIENDLY_LABELS[key]) return FRIENDLY_LABELS[key];
+  return key
+    .split(/[-_]/)
+    .map((word, index) => index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word)
+    .join(" ");
+}
+
 export function GeneratorWorkspace({
   usage,
   initialVideoType,
@@ -59,6 +194,15 @@ export function GeneratorWorkspace({
   const [language, setLanguage] = useState<OutputLanguage>("English");
   const [sceneGrouping, setSceneGrouping] = useState<SceneGrouping>("Auto");
   const [pack, setPack] = useState<ContentPack | null>(null);
+
+  // Prompt Variables (Dify variable system)
+  const [variables, setVariables] = useState<Record<string, string>>({
+    platform: "YouTube",
+    target_audience: "horror stories audience",
+    tone: "spooky & suspenseful",
+    narrator_style: "deep narrator voice"
+  });
+
   const [selectedOutputs, setSelectedOutputs] = useState<Record<OutputOption, boolean>>({
     includeThumbnail: planLimits.thumbnail,
     includeTitles: true,
@@ -72,6 +216,7 @@ export function GeneratorWorkspace({
     subtitleLines: 3,
     estimatedScenes: 1
   });
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -79,6 +224,14 @@ export function GeneratorWorkspace({
   const outputPaneRef = useRef<HTMLDivElement | null>(null);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const [extensionDetected, setExtensionDetected] = useState(false);
+
+  // Workflow node status states
+  const [storyStatus, setStoryStatus] = useState<NodeStatus>("idle");
+  const [scenesStatus, setScenesStatus] = useState<NodeStatus>("idle");
+  const [seoStatus, setSeoStatus] = useState<NodeStatus>("idle");
+  const [thumbnailStatus, setThumbnailStatus] = useState<NodeStatus>("idle");
+
+  const [activeTab, setActiveTab] = useState<string>("Overview");
 
   const canGenerate = useMemo(() => inputText.trim().length >= 10 && !loading, [inputText, loading]);
   const usageLabel =
@@ -140,23 +293,55 @@ export function GeneratorWorkspace({
     };
   }, []);
 
+  // Derive workflow node statuses when pack changes (e.g. on project load)
+  useEffect(() => {
+    if (pack) {
+      const hasStory = !!pack.summary && !!pack.characterBible?.name;
+      const hasScenes = pack.scenePrompts?.length > 0 && pack.scenePrompts.some(s => !!s.imagePrompt);
+      const hasSeo = pack.titles?.length > 0 && !!pack.description;
+      const hasThumbnail = !!pack.thumbnail?.prompt;
+
+      setStoryStatus(hasStory ? "completed" : "idle");
+      setScenesStatus(hasScenes ? "completed" : hasStory ? "out_of_sync" : "idle");
+      setSeoStatus(hasSeo ? "completed" : hasStory ? "out_of_sync" : "idle");
+      setThumbnailStatus(hasThumbnail ? "completed" : hasStory ? "out_of_sync" : "idle");
+    } else {
+      setStoryStatus("idle");
+      setScenesStatus("idle");
+      setSeoStatus("idle");
+      setThumbnailStatus("idle");
+    }
+  }, [pack]);
+
   async function refreshStats(nextText = inputText, nextGrouping = sceneGrouping) {
     const response = await fetch("/api/stats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inputText: nextText, sceneGrouping: nextGrouping })
     });
-    if (response.ok) setStats(await response.json());
+    if (response.ok) {
+      const data = await response.json();
+      setStats(data);
+    }
   }
 
   async function handleInputChange(value: string) {
     setInputText(value);
     setError("");
+    // Invalidate node statuses
+    setStoryStatus("idle");
+    setScenesStatus("idle");
+    setSeoStatus("idle");
+    setThumbnailStatus("idle");
     await refreshStats(value);
   }
 
   async function handleGroupingChange(value: SceneGrouping) {
     setSceneGrouping(value);
+    setStoryStatus("idle");
+    setScenesStatus("idle");
+    setSeoStatus("idle");
+    setThumbnailStatus("idle");
     await refreshStats(inputText, value);
   }
 
@@ -172,33 +357,270 @@ export function GeneratorWorkspace({
     await handleInputChange(text);
   }
 
+  // --- Step 1: Run Story Node ---
+  async function runStoryNode() {
+    setStoryStatus("generating");
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/generate/story", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputText,
+          videoType,
+          imageStyle: customImageStyle.trim() || imageStyle,
+          language,
+          sceneGrouping,
+          variables
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Story generation failed.");
+
+      setPack((prev) => {
+        const base = prev || {
+          summary: "",
+          videoType,
+          imageStyle: customImageStyle.trim() || imageStyle,
+          language,
+          characterBible: { name: "", age: "", gender: "", hair: "", clothes: "", personality: "", consistencyNotes: "" },
+          scenePrompts: [],
+          storyboard: [],
+          thumbnail: { prompt: "", textOverlay: "", compositionNotes: "" },
+          titles: [],
+          titlePack: { curiosity: [], fear: [], question: [], clickbait: [] },
+          intelligence: {
+            storyType: "",
+            storyEngine: { characters: [], emotion: "", timeline: [], structure: "" },
+            sceneEngine: { beats: [], notes: [] },
+            characterMemory: { name: "", age: "", gender: "", hair: "", clothes: "", personality: "", consistencyNotes: "" },
+            keywordPack: { primary: "", secondary: [], longTail: [] },
+            descriptionEngine: { seoDensity: "", cta: "", timestampNote: "", hashtagPlacement: "" },
+            hashtagEngine: { hashtags: [], sourceNotes: "" },
+            competitorEngine: [],
+            viralScore: { seo: 0, ctr: 0, emotion: 0, curiosity: 0, competition: 0, trend: 0, overall: 0, notes: [] },
+            imagePromptPresets: { flux: "", midjourney: "", chatgpt: "", leonardo: "", gemini: "" },
+            apiHooks: [],
+            sourceStatus: { youtubeData: "missing_key", youtubeSuggest: "missing_key", trends: "missing_key", notion: "missing_key", drive: "missing_key" }
+          },
+          description: "",
+          hashtags: [],
+          keywords: []
+        };
+
+        // Initialize empty placeholder scene prompts matching the story beats
+        const timelineScenes = data.timeline.map((item: any) => ({
+          sceneRange: item.sceneRange,
+          timestamp: item.timestamp,
+          beat: item.beat || "Opening",
+          summary: item.text || item.summary || "",
+          imagePrompt: "",
+          cameraAngle: "",
+          lighting: "",
+          emotion: ""
+        }));
+
+        return {
+          ...base,
+          summary: data.summary,
+          characterBible: data.characterBible,
+          scenePrompts: timelineScenes,
+          storyboard: timelineScenes
+        };
+      });
+
+      setStoryStatus("completed");
+      // Set subsequent nodes to out_of_sync
+      setScenesStatus("out_of_sync");
+      setSeoStatus("out_of_sync");
+      setThumbnailStatus("out_of_sync");
+      setActiveTab("Overview");
+      return data;
+    } catch (err) {
+      setStoryStatus("error");
+      setError(err instanceof Error ? err.message : "Story node failed.");
+      throw err;
+    }
+  }
+
+  // --- Step 2: Run Scenes Node ---
+  async function runScenesNode() {
+    if (!pack || !pack.summary) {
+      setError("Please run the Story Engine first.");
+      return;
+    }
+
+    setScenesStatus("generating");
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/generate/scenes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoType,
+          imageStyle: customImageStyle.trim() || imageStyle,
+          language,
+          summary: pack.summary,
+          characterBible: pack.characterBible,
+          scenes: pack.scenePrompts,
+          variables
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Scenes generation failed.");
+
+      setPack((prev) => ({
+        ...prev!,
+        scenePrompts: data.scenePrompts,
+        storyboard: data.storyboard
+      }));
+
+      setScenesStatus("completed");
+      setActiveTab("Scene Prompts");
+      return data;
+    } catch (err) {
+      setScenesStatus("error");
+      setError(err instanceof Error ? err.message : "Scenes node failed.");
+      throw err;
+    }
+  }
+
+  // --- Step 3: Run SEO Node ---
+  async function runSeoNode() {
+    if (!pack || !pack.summary) {
+      setError("Please run the Story Engine first.");
+      return;
+    }
+
+    setSeoStatus("generating");
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/generate/seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoType,
+          language,
+          summary: pack.summary,
+          keywords: pack.keywords,
+          variables
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "SEO generation failed.");
+
+      setPack((prev) => ({
+        ...prev!,
+        titles: data.titles,
+        titlePack: data.titlePack,
+        description: data.description,
+        hashtags: data.hashtags,
+        keywords: data.keywords,
+        intelligence: {
+          ...prev!.intelligence,
+          viralScore: data.viralScore,
+          sourceStatus: data.sourceStatus || prev!.intelligence.sourceStatus
+        }
+      }));
+
+      setSeoStatus("completed");
+      // Thumbnail creator depends on top title, so flag out of sync
+      setThumbnailStatus("out_of_sync");
+      setActiveTab("Titles");
+      return data;
+    } catch (err) {
+      setSeoStatus("error");
+      setError(err instanceof Error ? err.message : "SEO node failed.");
+      throw err;
+    }
+  }
+
+  // --- Step 4: Run Thumbnail Node ---
+  async function runThumbnailNode() {
+    if (!pack || !pack.summary) {
+      setError("Please run the Story Engine first.");
+      return;
+    }
+
+    setThumbnailStatus("generating");
+    setError("");
+    setNotice("");
+
+    const bestTitle = pack.titles?.[0] || "Untitled Video";
+
+    try {
+      const response = await fetch("/api/generate/thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoType,
+          imageStyle: customImageStyle.trim() || imageStyle,
+          language,
+          summary: pack.summary,
+          bestTitle,
+          variables
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Thumbnail generation failed.");
+
+      setPack((prev) => ({
+        ...prev!,
+        thumbnail: data.thumbnail
+      }));
+
+      setThumbnailStatus("completed");
+      setActiveTab("Thumbnail");
+      return data;
+    } catch (err) {
+      setThumbnailStatus("error");
+      setError(err instanceof Error ? err.message : "Thumbnail node failed.");
+      throw err;
+    }
+  }
+
+  // Linear Pipeline Sequential Execution
   async function generate() {
     setLoading(true);
     setError("");
     setNotice("");
     setPack(null);
 
-    const payload: GenerateOptions = {
-      inputText,
-      videoType,
-      imageStyle: customImageStyle.trim() || imageStyle,
-      language,
-      sceneGrouping,
-      ...selectedOutputs
-    };
-
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Generate failed.");
-      setPack(data.contentPack);
-      setStats(data.stats);
+      // 1. Story Node
+      const storyData = await runStoryNode();
+      
+      // 2. Scene Node
+      if (selectedOutputs.includeThumbnail || selectedOutputs.includeTitles || selectedOutputs.includeDescription || selectedOutputs.includeHashtags || selectedOutputs.includeKeywords) {
+        // Wait briefly for smooth visual edge animation
+        await new Promise((r) => setTimeout(r, 600));
+      }
+      await runScenesNode();
+
+      // 3. SEO Node
+      await new Promise((r) => setTimeout(r, 600));
+      await runSeoNode();
+
+      // 4. Thumbnail Node
+      if (selectedOutputs.includeThumbnail) {
+        await new Promise((r) => setTimeout(r, 600));
+        await runThumbnailNode();
+      }
+
+      setNotice("Content pack generated successfully via workflow pipeline.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Pipeline execution interrupted.");
     } finally {
       setLoading(false);
     }
@@ -214,16 +636,16 @@ export function GeneratorWorkspace({
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: pack.titles[0] || "Untitled Content Pack",
-            inputText,
-            inputType: stats.inputType,
-            videoType,
-            imageStyle: customImageStyle.trim() || imageStyle,
-            language,
-            sceneCount: pack.scenePrompts.length,
-            contentPack: pack
-          })
+        body: JSON.stringify({
+          title: pack.titles?.[0] || "Untitled Content Pack",
+          inputText,
+          inputType: stats.inputType,
+          videoType,
+          imageStyle: customImageStyle.trim() || imageStyle,
+          language,
+          sceneCount: pack.scenePrompts?.length || 0,
+          contentPack: pack
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not save project.");
@@ -235,8 +657,129 @@ export function GeneratorWorkspace({
     }
   }
 
+  // --- React Flow Diagram Nodes & Edges Generation ---
+  const nodes: Node[] = useMemo(() => {
+    return [
+      {
+        id: "srtInput",
+        type: "workflowNode",
+        data: {
+          label: "1. Subtitle & Script",
+          description: stats.inputType === "srt" ? `${stats.subtitleLines} lines uploaded` : `${stats.characterCount} characters input`,
+          icon: FileText,
+          status: inputText.trim().length >= 10 ? "completed" : "idle",
+          canRun: false
+        },
+        position: { x: 20, y: 80 }
+      },
+      {
+        id: "storyEngine",
+        type: "workflowNode",
+        data: {
+          label: "2. Story Engine",
+          description: "Summary & Character Bible",
+          icon: BookOpen,
+          status: storyStatus,
+          canRun: inputText.trim().length >= 10,
+          onRun: runStoryNode
+        },
+        position: { x: 270, y: 80 }
+      },
+      {
+        id: "sceneGenerator",
+        type: "workflowNode",
+        data: {
+          label: "3. Scene Generator",
+          description: "Visual prompts & angles",
+          icon: Film,
+          status: scenesStatus,
+          canRun: storyStatus === "completed",
+          onRun: runScenesNode
+        },
+        position: { x: 520, y: 80 }
+      },
+      {
+        id: "seoEngine",
+        type: "workflowNode",
+        data: {
+          label: "4. SEO & Viral Engine",
+          description: "Engaging titles & tags",
+          icon: Search,
+          status: seoStatus,
+          canRun: storyStatus === "completed",
+          onRun: runSeoNode
+        },
+        position: { x: 770, y: 80 }
+      },
+      {
+        id: "thumbnailCreator",
+        type: "workflowNode",
+        data: {
+          label: "5. Thumbnail Creator",
+          description: "Thumb direction & layout",
+          icon: Image,
+          status: thumbnailStatus,
+          canRun: storyStatus === "completed" && seoStatus === "completed",
+          onRun: runThumbnailNode
+        },
+        position: { x: 1020, y: 80 }
+      }
+    ];
+  }, [inputText, stats, storyStatus, scenesStatus, seoStatus, thumbnailStatus, pack]);
+
+  const edges: Edge[] = useMemo(() => {
+    return [
+      {
+        id: "e-input-story",
+        source: "srtInput",
+        target: "storyEngine",
+        animated: storyStatus === "generating",
+        style: { stroke: storyStatus === "generating" ? "#8B5CF6" : "#374151", strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: storyStatus === "generating" ? "#8B5CF6" : "#374151" }
+      },
+      {
+        id: "e-story-scenes",
+        source: "storyEngine",
+        target: "sceneGenerator",
+        animated: scenesStatus === "generating",
+        style: { stroke: scenesStatus === "generating" ? "#8B5CF6" : scenesStatus === "out_of_sync" ? "#F59E0B" : "#374151", strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: scenesStatus === "generating" ? "#8B5CF6" : scenesStatus === "out_of_sync" ? "#F59E0B" : "#374151" }
+      },
+      {
+        id: "e-scenes-seo",
+        source: "sceneGenerator",
+        target: "seoEngine",
+        animated: seoStatus === "generating",
+        style: { stroke: seoStatus === "generating" ? "#8B5CF6" : seoStatus === "out_of_sync" ? "#F59E0B" : "#374151", strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: seoStatus === "generating" ? "#8B5CF6" : seoStatus === "out_of_sync" ? "#F59E0B" : "#374151" }
+      },
+      {
+        id: "e-seo-thumb",
+        source: "seoEngine",
+        target: "thumbnailCreator",
+        animated: thumbnailStatus === "generating",
+        style: { stroke: thumbnailStatus === "generating" ? "#8B5CF6" : thumbnailStatus === "out_of_sync" ? "#F59E0B" : "#374151", strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: thumbnailStatus === "generating" ? "#8B5CF6" : thumbnailStatus === "out_of_sync" ? "#F59E0B" : "#374151" }
+      }
+    ];
+  }, [storyStatus, scenesStatus, seoStatus, thumbnailStatus]);
+
+  // Handle flow chart click to change preview tab below
+  const onNodeClick = (_e: any, node: any) => {
+    const tabMap: Record<string, string> = {
+      srtInput: "Overview",
+      storyEngine: "Character Bible",
+      sceneGenerator: "Scene Prompts",
+      seoEngine: "Titles",
+      thumbnailCreator: "Thumbnail"
+    };
+    if (tabMap[node.id]) {
+      setActiveTab(tabMap[node.id]);
+    }
+  };
+
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.45fr)_minmax(0,0.55fr)]">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
       <div className="space-y-5">
         <Panel className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
@@ -250,7 +793,7 @@ export function GeneratorWorkspace({
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold">Create Content Pack</h1>
-              <p className="mt-1 text-sm text-muted">Paste SRT/script or upload a subtitle file to build character, storyboard, title, and export assets.</p>
+              <p className="mt-1 text-sm text-muted">Paste SRT/script or upload a subtitle file.</p>
             </div>
             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line bg-panelSoft px-3 text-sm text-fg hover:border-accent">
               <FileUp size={16} />
@@ -263,7 +806,7 @@ export function GeneratorWorkspace({
             value={inputText}
             onChange={(event) => void handleInputChange(event.target.value)}
             placeholder="Paste your SRT or script here..."
-            className="min-h-[360px] w-full resize-y rounded-md border border-line bg-panelSoft p-4 text-sm leading-6 text-fg focus-ring"
+            className="min-h-[220px] w-full resize-y rounded-md border border-line bg-panelSoft p-4 text-sm leading-6 text-fg focus-ring"
           />
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted">
@@ -287,20 +830,6 @@ export function GeneratorWorkspace({
               <datalist id="video-type-options">
                 {VIDEO_TYPES.map((item) => <option key={item} value={item} />)}
               </datalist>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {recentVideoTypes.slice(0, 5).map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setVideoType(item)}
-                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                      videoType === item ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted hover:text-fg"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
             </Field>
 
             <Field label="Image Style">
@@ -315,40 +844,6 @@ export function GeneratorWorkspace({
                   </option>
                 ))}
               </select>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {IMAGE_STYLES.map((style) => {
-                  return (
-                    <button
-                      key={style.value}
-                      type="button"
-                      onClick={() => setImageStyle(style.value)}
-                      className={`rounded-lg border p-3 text-left transition ${
-                        imageStyle === style.value ? "border-accent bg-accent/12" : "border-line bg-panelSoft hover:border-accent"
-                      }`}
-                    >
-                      <div className="text-sm font-medium">{style.value}</div>
-                      <div className="mt-1 text-xs leading-5 text-muted">{style.description}</div>
-                    </button>
-                    );
-                })}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {recentImageStyles.slice(0, 5).map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => {
-                      setImageStyle(item);
-                      setCustomImageStyle("");
-                    }}
-                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                      imageStyle === item && !customImageStyle ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted hover:text-fg"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
               <input
                 value={customImageStyle}
                 onChange={(event) => setCustomImageStyle(event.target.value)}
@@ -362,77 +857,88 @@ export function GeneratorWorkspace({
                 {OUTPUT_LANGUAGES.map((item) => {
                   const allowed = planLimits.allowedLanguages.includes(item);
                   return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => allowed && setLanguage(item)}
-                    disabled={!allowed}
-                    className={`rounded-md border px-3 py-2 text-sm ${
-                      language === item ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted"
-                    } ${!allowed ? "opacity-45" : ""}`}
-                  >
-                    {item}
-                  </button>
-                )})}
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => allowed && setLanguage(item)}
+                      disabled={!allowed}
+                      className={`rounded-md border px-3 py-2 text-sm ${
+                        language === item ? "border-accent bg-accent text-white" : "border-line bg-panelSoft text-muted"
+                      } ${!allowed ? "opacity-45" : ""}`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
               </div>
             </Field>
 
             <Field label="Scene Grouping">
-              <select value={sceneGrouping} onChange={(event) => void handleGroupingChange(event.target.value as SceneGrouping)} className="h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring">
+              <select
+                value={sceneGrouping}
+                onChange={(event) => void handleGroupingChange(event.target.value as SceneGrouping)}
+                className="h-10 w-full rounded-md border border-line bg-panelSoft px-3 text-sm focus-ring"
+              >
                 {SCENE_GROUPINGS.map((item) => <option key={item}>{item}</option>)}
               </select>
             </Field>
 
-            <div className="grid gap-2 text-sm text-muted sm:grid-cols-2">
-              {outputOptions.map((item) => {
-                const allowed =
-                  item.key === "includeThumbnail" ? planLimits.thumbnail :
-                  item.key === "includeKeywords" ? planLimits.keywords :
-                  true;
-                return (
-                <label key={item.key} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={allowed && selectedOutputs[item.key]}
-                    disabled={!allowed}
-                    onChange={(event) =>
-                      setSelectedOutputs((current) => ({
-                        ...current,
-                        [item.key]: event.target.checked
-                      }))
-                    }
-                    className="h-4 w-4 accent-violet-500"
-                  />
-                  <span className={!allowed ? "opacity-55" : ""}>{item.label}</span>
-                </label>
-              )})}
+            {/* Variable System (Dify style) */}
+            <div className="border-t border-line/50 pt-4 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-fg flex items-center gap-1.5">
+                  <BookOpen size={16} className="text-accent" /> Prompt Variables
+                </h3>
+                <p className="text-xs text-muted mt-0.5">
+                  Configure variables to customize system prompts for target channels.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {Object.entries(variables).map(([key, val]) => (
+                  <div key={key} className="flex gap-2 items-center">
+                    <span className="text-xs font-semibold text-fg w-1/3 truncate text-muted">
+                      {getFriendlyLabel(key)}:
+                    </span>
+                    <input
+                      type="text"
+                      value={val}
+                      onChange={(e) => {
+                        const nextVal = e.target.value;
+                        setVariables(prev => ({ ...prev, [key]: nextVal }));
+                      }}
+                      className="h-8 flex-1 rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                      placeholder={`Value for ${getFriendlyLabel(key).toLowerCase()}`}
+                    />
+                    {!["platform", "target_audience", "tone", "narrator_style"].includes(key) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVariables(prev => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
+                        }}
+                        className="text-xs text-danger hover:underline px-1 shrink-0"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Custom Variable Form */}
+              <AddVariableForm onAdd={(key, val) => {
+                setVariables(prev => ({ ...prev, [key]: val }));
+              }} />
             </div>
 
-            <div className="hidden xl:block">
-              <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-accent/30 bg-gradient-to-r from-accent/15 via-panelSoft to-panel px-3 py-2.5 ring-1 ring-accent/15">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Sparkles size={14} className="shrink-0 text-accent" />
-                  <span className="text-xs font-semibold text-fg">AI image generation</span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
-                    {extensionDetected ? "Ready" : "Not ready"}
-                  </span>
-                </div>
-                <a
-                  href="#export"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
-                  }}
-                  className={`shrink-0 rounded-md border border-transparent bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-strong ${extensionDetected ? "animate-pulse" : ""}`}
-                >
-                  Open
-                </a>
-              </div>
-            </div>
             <div className="sticky bottom-16 z-10 flex flex-wrap gap-3 rounded-lg border border-line bg-panel/95 p-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
               <Button type="button" size="lg" disabled={!canGenerate} onClick={() => void generate()}>
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                {loading ? "Generating..." : "Generate Content Pack"}
+                {loading ? "Generating..." : "Generate All Nodes"}
               </Button>
               <Button type="button" size="lg" variant="secondary" disabled={!pack || saving} onClick={() => void saveProject()}>
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
@@ -442,7 +948,7 @@ export function GeneratorWorkspace({
             {(error || notice) && (
               <div ref={feedbackRef} className="mt-3 space-y-2">
                 {error && (
-                  <div className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger">
+                  <div className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger animate-shake">
                     {error}
                   </div>
                 )}
@@ -457,33 +963,52 @@ export function GeneratorWorkspace({
         </Panel>
       </div>
 
-      <div ref={outputPaneRef} className="scroll-mt-24">
-        <div className="pointer-events-none fixed inset-x-4 bottom-20 z-30 xl:hidden">
-          <div className="pointer-events-auto rounded-xl border border-accent/30 bg-gradient-to-r from-accent/15 via-panelSoft to-panel p-3 shadow-2xl ring-1 ring-accent/15 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">AI image generation</div>
-                <div className="truncate text-xs text-muted">Quick access.</div>
-              </div>
-              <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${extensionDetected ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
-                {extensionDetected ? "Ready" : "Not ready"}
-              </span>
+      <div ref={outputPaneRef} className="scroll-mt-24 flex flex-col space-y-5">
+        {/* React Flow Panel */}
+        <Panel className="p-0 border-line bg-panelSoft/20 overflow-hidden relative">
+          <div className="px-4 py-2 border-b border-line bg-panelSoft/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+              <span className="text-xs font-semibold text-fg">Flowise Pipeline Workflow</span>
             </div>
-            <a
-              href="#export"
-              onClick={(event) => {
-                event.preventDefault();
-                window.postMessage({ type: "TAO_ANH_AI_OPEN_PANEL" }, window.location.origin);
-              }}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong hover:shadow-md ${extensionDetected ? "animate-pulse" : ""}`}
-            >
-              <Sparkles size={16} />
-              Open AI image generation
-            </a>
+            <div className="text-[10px] text-muted flex items-center gap-1">
+              <RefreshCw size={10} /> Click a node to view its output tab below
+            </div>
           </div>
+          <div className="h-[230px] w-full">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              onNodeClick={onNodeClick}
+              fitView
+              fitViewOptions={{ padding: 0.15 }}
+              minZoom={0.5}
+              maxZoom={1.5}
+              nodesConnectable={false}
+              nodesDraggable={true}
+              elementsSelectable={true}
+              panOnScroll={true}
+              zoomOnDoubleClick={false}
+            >
+              <Background color="#374151" gap={16} size={1} />
+              <Controls showInteractive={false} className="!bg-panel !border-line" />
+            </ReactFlow>
+          </div>
+        </Panel>
+
+        <div>
+          {loading && !pack ? (
+            <LoadingPanel />
+          ) : (
+            <OutputTabs
+              pack={pack}
+              plan={usage.plan}
+              activeTab={activeTab}
+              onActiveTabChange={(tab) => setActiveTab(tab)}
+            />
+          )}
         </div>
-        <div className="h-24 xl:h-0" />
-        {loading ? <LoadingPanel key="loading" /> : <OutputTabs key="output" pack={pack} plan={usage.plan} />}
       </div>
     </div>
   );
@@ -509,19 +1034,65 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function LoadingPanel() {
   return (
-    <Panel className="min-h-[520px]">
-      <h2 className="text-xl font-semibold">Turning your script into a creator-ready content pack...</h2>
-      <div className="mt-6 space-y-4">
-        {["Analyzing script", "Building character bible", "Laying out storyboard", "Creating title pack"].map((item) => (
+    <Panel className="min-h-[400px] flex flex-col justify-center">
+      <h2 className="text-xl font-semibold animate-pulse text-center">Pipeline running step-by-step...</h2>
+      <div className="mt-6 space-y-4 max-w-md mx-auto w-full">
+        {["Analyzing script beats", "Formulating consistent Character Bible", "Creating prompt directions", "Optimizing SEO Titles"].map((item) => (
           <div key={item} className="rounded-lg border border-line bg-panelSoft p-4">
-            <div className="mb-3 flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3 text-sm">
               <Loader2 className="animate-spin text-accent" size={16} />
               {item}
             </div>
-            <div className="h-3 w-full animate-pulse rounded-full bg-line" />
           </div>
         ))}
       </div>
     </Panel>
+  );
+}
+
+interface AddVariableFormProps {
+  onAdd: (key: string, val: string) => void;
+}
+
+function AddVariableForm({ onAdd }: AddVariableFormProps) {
+  const [key, setKey] = useState("");
+  const [val, setVal] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!key.trim() || !val.trim()) return;
+    const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (!cleanKey) return;
+    onAdd(cleanKey, val.trim());
+    setKey("");
+    setVal("");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-panelSoft/30 p-2.5 rounded border border-line/45">
+      <input
+        type="text"
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        className="h-8 w-24 rounded-md border border-line bg-panel px-2 text-xs focus-ring text-fg"
+        placeholder="Field name"
+        required
+      />
+      <input
+        type="text"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        className="h-8 flex-1 rounded-md border border-line bg-panel px-2 text-xs focus-ring text-fg"
+        placeholder="Field value"
+        required
+      />
+      <button
+        type="submit"
+        disabled={!key.trim() || !val.trim()}
+        className="bg-accent hover:bg-accent-strong disabled:opacity-40 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition shrink-0"
+      >
+        + Add
+      </button>
+    </form>
   );
 }

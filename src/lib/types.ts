@@ -204,6 +204,7 @@ export type GenerateOptions = {
   includeDescription?: boolean;
   includeHashtags?: boolean;
   includeKeywords?: boolean;
+  variables?: Record<string, string>;
 };
 
 export type GenerationRecord = {

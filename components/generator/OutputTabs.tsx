@@ -1,39 +1,175 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, FileJson, FileText, Send } from "lucide-react";
+import { Download, ExternalLink, FileJson, FileText, Send, RefreshCw, Sparkles, Loader2, Play, Eye } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { exportAsCsv, exportAsMarkdown, exportAsText, exportForTaoAnhAI } from "@/src/lib/export";
 import { PLAN_LIMITS } from "@/src/lib/plan-config";
-import type { ContentPack, PlanName } from "@/src/lib/types";
+import type { ContentPack, PlanName, CharacterBible } from "@/src/lib/types";
 import { CopyButton } from "./CopyButton";
 import { ScenePromptCard } from "./ScenePromptCard";
+import { syncCharacterMemory, compileScenePrompt } from "@/src/lib/character-memory";
+import { YouTubeMockup } from "./YouTubeMockup";
 
 const tabs = ["Overview", "Intelligence", "Character Bible", "Storyboard", "Scene Prompts", "Thumbnail", "Titles", "Description", "Hashtags", "Export"] as const;
 
-export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPack | null; plan?: PlanName; projectId?: string }) {
-  const [active, setActive] = useState<(typeof tabs)[number]>("Overview");
+function HighlightedTitle({ title, keyword }: { title: string; keyword: string }) {
+  if (!keyword.trim()) return <span>{title}</span>;
+
+  const terms = keyword
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 2);
+
+  const relatedTerms = ["rule", "rules", "never", "always", "broken", "warning", "story", "stories", "terror", "creepy"];
+
+  const words = title.split(/(\s+)/);
+
+  return (
+    <span>
+      {words.map((word, index) => {
+        const cleanWord = word.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (!cleanWord) return <span key={index}>{word}</span>;
+
+        if (terms.includes(cleanWord)) {
+          return (
+            <span key={index} className="bg-success/15 text-success font-semibold px-0.5 rounded border border-success/20">
+              {word}
+            </span>
+          );
+        }
+
+        if (relatedTerms.includes(cleanWord) || /^\d+$/.test(cleanWord)) {
+          return (
+            <span key={index} className="bg-warning/15 text-warning font-semibold px-0.5 rounded border border-warning/20">
+              {word}
+            </span>
+          );
+        }
+
+        return <span key={index}>{word}</span>;
+      })}
+    </span>
+  );
+}
+
+export function OutputTabs({
+  pack,
+  plan = "Free",
+  projectId,
+  activeTab: externalActiveTab,
+  onActiveTabChange: externalSetActiveTab
+}: {
+  pack: ContentPack | null;
+  plan?: PlanName;
+  projectId?: string;
+  activeTab?: string;
+  onActiveTabChange?: (tab: string) => void;
+}) {
+  const [internalActive, internalSetActive] = useState<(typeof tabs)[number]>("Overview");
+
+  const active = externalActiveTab !== undefined ? (externalActiveTab as (typeof tabs)[number]) : internalActive;
+  const setActive = (tab: (typeof tabs)[number]) => {
+    if (externalSetActiveTab) {
+      externalSetActiveTab(tab);
+    } else {
+      internalSetActive(tab);
+    }
+  };
+
   const [currentPack, setCurrentPack] = useState<ContentPack | null>(pack);
+  
+  // Dynamic Character Memory Compiler (On-the-fly prompt stitching)
+  const compiledPack = useMemo((): ContentPack | null => {
+    if (!currentPack) return null;
+    const { scenePrompts, storyboard } = syncCharacterMemory(
+      currentPack.scenePrompts,
+      currentPack.storyboard,
+      currentPack.characterBible,
+      currentPack.imageStyle
+    );
+    return {
+      ...currentPack,
+      scenePrompts,
+      storyboard
+    };
+  }, [currentPack]);
+
   const [editingScene, setEditingScene] = useState("");
   const [regeneratingScene, setRegeneratingScene] = useState("");
   const [savingChanges, setSavingChanges] = useState(false);
   const [notice, setNotice] = useState("");
   const [extensionDetected, setExtensionDetected] = useState(false);
-  const visibleTabs = useMemo(() => getVisibleTabs(currentPack, plan), [currentPack, plan]);
-  const textExport = useMemo(() => (currentPack ? exportAsText(currentPack) : ""), [currentPack]);
-  const markdownExport = useMemo(() => (currentPack ? exportAsMarkdown(currentPack) : ""), [currentPack]);
-  const csvExport = useMemo(() => (currentPack ? exportAsCsv(currentPack) : ""), [currentPack]);
-  const taoAnhAIExport = useMemo(() => (currentPack ? exportForTaoAnhAI(currentPack) : ""), [currentPack]);
+  
+  // Character visual consistency forms states
+  const [charName, setCharName] = useState(pack?.characterBible?.name || "");
+  const [charAge, setCharAge] = useState(pack?.characterBible?.age || "");
+  const [charGender, setCharGender] = useState(pack?.characterBible?.gender || "");
+  const [charHair, setCharHair] = useState(pack?.characterBible?.hair || "");
+  const [charClothes, setCharClothes] = useState(pack?.characterBible?.clothes || "");
+
+  // Viral Title Engine States
+  const [viralKeyword, setViralKeyword] = useState(pack?.intelligence?.keywordPack?.primary || "");
+  const [viralLoading, setViralLoading] = useState(false);
+  const [viralResult, setViralResult] = useState<any | null>(null);
+
+  // Live YouTube Mockup States
+  const [mockupTitle, setMockupTitle] = useState(pack?.titles?.[0] || pack?.titlePack?.curiosity?.[0] || "");
+  const [mockupThumbnailText, setMockupThumbnailText] = useState(pack?.thumbnail?.textOverlay || "");
+  const [mockupChannelName, setMockupChannelName] = useState("Rmah Horror");
+
+  const visibleTabs = useMemo(() => getVisibleTabs(compiledPack, plan), [compiledPack, plan]);
+  const textExport = useMemo(() => (compiledPack ? exportAsText(compiledPack) : ""), [compiledPack]);
+  const markdownExport = useMemo(() => (compiledPack ? exportAsMarkdown(compiledPack) : ""), [compiledPack]);
+  const csvExport = useMemo(() => (compiledPack ? exportAsCsv(compiledPack) : ""), [compiledPack]);
+  const taoAnhAIExport = useMemo(() => (compiledPack ? exportForTaoAnhAI(compiledPack) : ""), [compiledPack]);
   const exportFormats = PLAN_LIMITS[plan].exportFormats;
   const taoAnhAIDownloadUrl = process.env.NEXT_PUBLIC_TAOANH_AI_DOWNLOAD_URL?.trim() || "";
 
   useEffect(() => {
     setCurrentPack(pack);
-    setActive("Overview");
+    if (!externalActiveTab) {
+      setActive("Overview");
+    }
     setEditingScene("");
     setRegeneratingScene("");
-  }, [pack]);
+    setViralResult(null);
+    
+    if (pack?.characterBible) {
+      setCharName(pack.characterBible.name || "");
+      setCharAge(pack.characterBible.age || "");
+      setCharGender(pack.characterBible.gender || "");
+      setCharHair(pack.characterBible.hair || "");
+      setCharClothes(pack.characterBible.clothes || "");
+    }
+
+    if (pack?.intelligence?.keywordPack?.primary) {
+      setViralKeyword(pack.intelligence.keywordPack.primary);
+    } else {
+      setViralKeyword("");
+    }
+
+    if (pack) {
+      setMockupTitle(pack.titles?.[0] || pack.titlePack?.curiosity?.[0] || "");
+      setMockupThumbnailText(pack.thumbnail?.textOverlay || "");
+      setMockupChannelName("Rmah Horror");
+    } else {
+      setMockupTitle("");
+      setMockupThumbnailText("");
+    }
+  }, [pack, externalActiveTab]);
+
+  useEffect(() => {
+    if (viralResult) {
+      if (viralResult.bestTitle) {
+        setMockupTitle(viralResult.bestTitle);
+      }
+      if (viralResult.thumbnailTextScore?.text) {
+        setMockupThumbnailText(viralResult.thumbnailTextScore.text);
+      }
+    }
+  }, [viralResult]);
 
   useEffect(() => {
     if (currentPack && !visibleTabs.includes(active)) {
@@ -75,7 +211,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
     };
   }, []);
 
-  if (!currentPack) {
+  if (!currentPack || !compiledPack) {
     return (
       <Panel className="flex min-h-[520px] items-center justify-center text-center">
         <div>
@@ -106,19 +242,22 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
     return `${sceneRange}-${timestamp}`;
   }
 
-  function updateScene(sceneRange: string, timestamp: string, imagePrompt: string) {
-    setCurrentPack((current) =>
-      current
-        ? {
-            ...current,
-            scenePrompts: current.scenePrompts.map((scene) =>
-              scene.sceneRange === sceneRange && scene.timestamp === timestamp
-                ? { ...scene, imagePrompt }
-                : scene
-            )
-          }
-        : current
-    );
+  function updateScene(sceneRange: string, timestamp: string, nextSummary: string) {
+    setCurrentPack((current) => {
+      if (!current) return null;
+      const updatedScenes = current.scenePrompts.map((scene) => {
+        if (scene.sceneRange === sceneRange && scene.timestamp === timestamp) {
+          const updatedItem = { ...scene, summary: nextSummary };
+          updatedItem.imagePrompt = compileScenePrompt(updatedItem, current.characterBible, current.imageStyle);
+          return updatedItem;
+        }
+        return scene;
+      });
+      return {
+        ...current,
+        scenePrompts: updatedScenes
+      };
+    });
   }
 
   function deleteScene(sceneRange: string, timestamp: string) {
@@ -133,6 +272,63 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
         : current
     );
   }
+
+  async function runViralEngine() {
+    if (!compiledPack || !viralKeyword.trim()) return;
+    setViralLoading(true);
+    setNotice("");
+    try {
+      const response = await fetch("/api/viral-engine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keyword: viralKeyword.trim(),
+          summary: compiledPack.summary,
+          videoType: compiledPack.videoType,
+          thumbnailText: compiledPack.thumbnail?.textOverlay || ""
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Viral analysis failed.");
+      setViralResult(data.analysis);
+      setNotice("Viral Engine analysis complete.");
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Viral analysis failed.");
+    } finally {
+      setViralLoading(false);
+    }
+  }
+
+  const updateCharacterBibleField = (field: keyof CharacterBible, value: string) => {
+    if (field === "name") setCharName(value);
+    else if (field === "age") setCharAge(value);
+    else if (field === "gender") setCharGender(value);
+    else if (field === "hair") setCharHair(value);
+    else if (field === "clothes") setCharClothes(value);
+
+    setCurrentPack((prev) => {
+      if (!prev) return null;
+      
+      const updatedBible = {
+        ...prev.characterBible,
+        [field]: value
+      };
+
+      const { scenePrompts, storyboard } = syncCharacterMemory(
+        prev.scenePrompts,
+        prev.storyboard,
+        updatedBible,
+        prev.imageStyle
+      );
+
+      return {
+        ...prev,
+        characterBible: updatedBible,
+        scenePrompts,
+        storyboard
+      };
+    });
+  };
 
   async function regenerateScene(sceneRange: string, timestamp: string) {
     const scene = currentPack?.scenePrompts.find(
@@ -150,7 +346,8 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
           scene,
           videoType: currentPack.videoType,
           imageStyle: currentPack.imageStyle,
-          language: currentPack.language
+          language: currentPack.language,
+          characterBible: currentPack.characterBible
         })
       });
       const data = await response.json();
@@ -168,6 +365,30 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
     } finally {
       setRegeneratingScene("");
     }
+  }
+
+  function handleUpdateSceneMetadata(
+    sceneRange: string,
+    timestamp: string,
+    field: "cameraAngle" | "lighting" | "emotion",
+    value: string
+  ) {
+    setCurrentPack((current) => {
+      if (!current) return null;
+      return {
+        ...current,
+        scenePrompts: current.scenePrompts.map((item) => {
+          if (item.sceneRange === sceneRange && item.timestamp === timestamp) {
+            return {
+              ...item,
+              [field]: value
+            };
+          }
+          return item;
+        })
+      };
+    });
+    setNotice(`Updated ${field} to "${value}". Click the refresh icon to regenerate.`);
   }
 
   async function saveChanges() {
@@ -234,10 +455,10 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
   }
 
   async function sendToTaoAnhAI() {
-    if (!currentPack) return;
+    if (!compiledPack) return;
     const prompts = [
-      currentPack.thumbnail.prompt,
-      ...currentPack.scenePrompts.map((scene) => scene.imagePrompt)
+      compiledPack.thumbnail.prompt,
+      ...compiledPack.scenePrompts.map((scene) => scene.imagePrompt)
     ]
       .map((item) => item.trim())
       .filter(Boolean);
@@ -267,19 +488,19 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
   }
 
   async function sendThumbnailOnly() {
-    if (!currentPack?.thumbnail.prompt.trim()) return;
+    if (!compiledPack?.thumbnail.prompt.trim()) return;
     window.postMessage(
       {
         type: "TAO_ANH_AI_IMPORT_QUEUE",
-        payload: { prompts: [currentPack.thumbnail.prompt.trim()] }
+        payload: { prompts: [compiledPack.thumbnail.prompt.trim()] }
       },
       window.location.origin
     );
   }
 
   async function sendScenesOnly() {
-    if (!currentPack) return;
-    const prompts = currentPack.scenePrompts.map((scene) => scene.imagePrompt.trim()).filter(Boolean);
+    if (!compiledPack) return;
+    const prompts = compiledPack.scenePrompts.map((scene) => scene.imagePrompt.trim()).filter(Boolean);
     if (!prompts.length) return;
     window.postMessage(
       {
@@ -361,22 +582,77 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       )}
 
       {active === "Character Bible" && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SummaryCard label="Name" value={currentPack.characterBible.name} />
-          <SummaryCard label="Age" value={currentPack.characterBible.age} />
-          <SummaryCard label="Gender" value={currentPack.characterBible.gender} />
-          <SummaryCard label="Hair" value={currentPack.characterBible.hair} />
-          <SummaryCard label="Clothes" value={currentPack.characterBible.clothes} />
-          <SummaryCard label="Personality" value={currentPack.characterBible.personality} />
-          <div className="sm:col-span-2">
-            <SummaryCard label="Consistency Notes" value={currentPack.characterBible.consistencyNotes} />
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-fg">Character Visual Memory</h3>
+              <p className="text-xs text-muted mt-0.5">Tweak the 4 core attributes to enforce visual consistency across all scene image prompts in real-time.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 bg-panelSoft/30 p-4 rounded-lg border border-line">
+            <label className="block">
+              <span className="text-xs font-semibold text-fg">Character Name</span>
+              <input
+                type="text"
+                value={charName}
+                onChange={(e) => updateCharacterBibleField("name", e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                placeholder="e.g. Jack"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold text-fg">Age Category</span>
+              <input
+                type="text"
+                value={charAge}
+                onChange={(e) => updateCharacterBibleField("age", e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                placeholder="e.g. 30-year-old adult"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold text-fg">Gender</span>
+              <input
+                type="text"
+                value={charGender}
+                onChange={(e) => updateCharacterBibleField("gender", e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                placeholder="e.g. male"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold text-fg">Hair Style & Color (Core)</span>
+              <input
+                type="text"
+                value={charHair}
+                onChange={(e) => updateCharacterBibleField("hair", e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                placeholder="e.g. messy black hair"
+              />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="text-xs font-semibold text-fg">Clothes & Wardrobe (Core)</span>
+              <input
+                type="text"
+                value={charClothes}
+                onChange={(e) => updateCharacterBibleField("clothes", e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-panelSoft px-3 text-xs focus-ring text-fg"
+                placeholder="e.g. green canvas jacket and blue jeans"
+              />
+            </label>
+          </div>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SummaryCard label="Personality" value={compiledPack.characterBible.personality} />
+            <SummaryCard label="Consistency Notes" value={compiledPack.characterBible.consistencyNotes} />
           </div>
         </div>
       )}
 
       {active === "Storyboard" && (
         <div className="space-y-4">
-          {currentPack.storyboard.map((scene) => (
+          {compiledPack.storyboard.map((scene) => (
             <div key={`${scene.sceneRange}-${scene.timestamp}`} className="rounded-lg border border-line bg-panelSoft p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -402,7 +678,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
 
       {active === "Scene Prompts" && (
         <div className="space-y-4">
-          {currentPack.scenePrompts.map((scene) => (
+          {compiledPack.scenePrompts.map((scene) => (
             <ScenePromptCard
               key={`${scene.sceneRange}-${scene.timestamp}`}
               scene={scene}
@@ -416,6 +692,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
                   current === sceneKey(scene.sceneRange, scene.timestamp) ? "" : sceneKey(scene.sceneRange, scene.timestamp)
                 )
               }
+              onUpdateMetadata={(field, value) => handleUpdateSceneMetadata(scene.sceneRange, scene.timestamp, field, value)}
             />
           ))}
         </div>
@@ -423,25 +700,303 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
 
       {active === "Thumbnail" && (
         <div className="space-y-4">
-          <OutputBlock title="Thumbnail Prompt" content={currentPack.thumbnail.prompt} />
-          <OutputBlock title="Text Overlay" content={currentPack.thumbnail.textOverlay} />
-          <OutputBlock title="Composition Notes" content={currentPack.thumbnail.compositionNotes} />
-          <CopyButton text={currentPack.thumbnail.prompt} label="Copy Thumbnail Prompt" />
+          <OutputBlock title="Thumbnail Prompt" content={compiledPack.thumbnail.prompt} />
+          <OutputBlock title="Text Overlay" content={compiledPack.thumbnail.textOverlay} />
+          <OutputBlock title="Composition Notes" content={compiledPack.thumbnail.compositionNotes} />
+          <CopyButton text={compiledPack.thumbnail.prompt} label="Copy Thumbnail Prompt" />
         </div>
       )}
 
       {active === "Titles" && (
-        <div className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-2">
-            <TitleGroupCard title="Curiosity" titles={currentPack.titlePack.curiosity} />
-            <TitleGroupCard title="Fear" titles={currentPack.titlePack.fear} />
-            <TitleGroupCard title="Question" titles={currentPack.titlePack.question} />
-            <TitleGroupCard title="Clickbait" titles={currentPack.titlePack.clickbait} />
+        <div className="space-y-6">
+          {/* Live YouTube Feed Mockup Card */}
+          <YouTubeMockup
+            title={mockupTitle}
+            thumbnailText={mockupThumbnailText}
+            channelName={mockupChannelName}
+            availableTitles={
+              viralResult
+                ? [viralResult.bestTitle, ...viralResult.topTitles]
+                : [
+                    ...(compiledPack?.titles || []),
+                    ...(compiledPack?.titlePack?.curiosity || []),
+                    ...(compiledPack?.titlePack?.fear || []),
+                  ].slice(0, 8)
+            }
+            onTitleChange={setMockupTitle}
+            onThumbnailTextChange={setMockupThumbnailText}
+            onChannelNameChange={setMockupChannelName}
+          />
+
+          {/* Viral Engine Widget */}
+          <div className="rounded-lg border border-accent/20 bg-panelSoft/30 p-5 space-y-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-fg flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-accent animate-pulse" /> Viral Engine Title Analyzer
+                </h3>
+                <p className="text-xs text-muted mt-0.5">Analyze search demand autocompletes, YouTube keyword volumes and competitors to predict CTR/SEO score optimization.</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-fg uppercase tracking-wider text-muted">
+                Target Keyword
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2 max-w-lg">
+                <input
+                  type="text"
+                  value={viralKeyword}
+                  onChange={(e) => setViralKeyword(e.target.value)}
+                  className="h-9 flex-1 rounded-md border border-line bg-panel px-3 text-xs focus-ring text-fg"
+                  placeholder="Enter target keyword... (e.g. night shift hospital horror)"
+                />
+                <button
+                  onClick={runViralEngine}
+                  disabled={viralLoading || !viralKeyword.trim()}
+                  className="bg-accent hover:bg-accent-strong disabled:bg-accent/35 text-white px-4 py-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition shrink-0 h-9"
+                >
+                  {viralLoading ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                  {viralLoading ? "Analyzing..." : "Analyze & Generate"}
+                </button>
+              </div>
+              <p className="text-[11px] text-muted">
+                {viralLoading 
+                  ? "Running analysis (usually takes 3-8 seconds due to live search requests)..." 
+                  : "Analysis takes 3-8 seconds (or 1-2 seconds if cached). No guaranteed views, only predicted CTR/SEO optimization."
+                }
+              </p>
+            </div>
+
+            {/* Analysis Results Display */}
+            {viralResult && (
+              <div className="space-y-5 border-t border-line/50 pt-4 animate-fadeIn">
+                
+                {/* Best Title Section */}
+                <div 
+                  className={`rounded-lg border p-4 space-y-3 cursor-pointer transition ${
+                    mockupTitle === viralResult.bestTitle 
+                      ? "border-accent bg-accent/5 ring-1 ring-accent/30 shadow-md" 
+                      : "border-line bg-panelSoft/20 hover:border-accent/40"
+                  }`}
+                  onClick={() => setMockupTitle(viralResult.bestTitle)}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] uppercase font-bold text-accent tracking-wider flex items-center gap-1.5">
+                        {mockupTitle === viralResult.bestTitle && <Eye size={10} className="text-accent animate-pulse" />}
+                        <span>Best Title (Click to preview)</span>
+                      </div>
+                      <h4 className="mt-1 text-base font-bold text-fg">
+                        <HighlightedTitle title={viralResult.bestTitle} keyword={viralKeyword} />
+                      </h4>
+                    </div>
+                    <div className="rounded-md bg-accent px-3 py-1.5 text-center text-white shrink-0">
+                      <div className="text-[10px] uppercase font-medium">Score</div>
+                      <div className="text-sm font-bold">{viralResult.overallScore}/100</div>
+                    </div>
+                  </div>
+                  
+                  {/* Hook Breakdown & Why this title works side-by-side */}
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-line/40 pt-3">
+                    <div>
+                      <h5 className="text-[10px] uppercase font-bold text-muted tracking-wider flex items-center justify-between">
+                        <span>Hook Breakdown</span>
+                        <span className="text-accent">{viralResult.hookScore || 0}/100</span>
+                      </h5>
+                      <div className="mt-2 space-y-1">
+                        {viralResult.hookBreakdown && viralResult.hookBreakdown.map((item: string, i: number) => (
+                          <div key={i} className="flex items-center gap-1.5 text-xs text-success">
+                            <span className="font-semibold">✓</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] uppercase font-bold text-muted tracking-wider">
+                        Why this title works
+                      </h5>
+                      <p className="mt-2 text-xs text-muted leading-5">
+                        {viralResult.whyItWorks}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score board card */}
+                <div className="rounded-lg border border-line bg-panel p-4 space-y-4">
+                  <h4 className="text-xs font-semibold text-fg uppercase tracking-wider text-muted">
+                    KPI Score Board
+                  </h4>
+                  <div className="space-y-4">
+                    {/* Primary Engagement Row */}
+                    <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+                      <ScoreMetric label="SEO Match" score={viralResult.seoMatchScore} />
+                      <ScoreMetric label="CTR Hook" score={viralResult.ctrHookScore} />
+                      <ScoreMetric label="Curiosity" score={viralResult.curiosityScore} />
+                      <ScoreMetric label="Emotion" score={viralResult.emotionScore} />
+                    </div>
+                    {/* Formatting Row */}
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 border-t border-line/30 pt-4">
+                      <ScoreMetric label="Uniqueness" score={viralResult.uniquenessRating} />
+                      <ScoreMetric label="Length" score={viralResult.lengthScore} />
+                      <ScoreMetric label="Mobile Read" score={viralResult.mobileReadability} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thumbnail Text Score Analysis */}
+                {viralResult.thumbnailTextScore && (
+                  <div className="rounded-lg border border-line bg-panel p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-semibold text-fg uppercase tracking-wider text-muted">
+                          Thumbnail Text Analysis
+                        </h4>
+                        <div className="mt-1 text-sm font-bold text-fg italic">
+                          "{viralResult.thumbnailTextScore.text}"
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase font-medium text-muted">Curiosity trigger</div>
+                        <div className="text-xs font-semibold text-success">
+                          {viralResult.thumbnailTextScore.curiosity}/100
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="bg-panelSoft/50 p-2.5 rounded border border-line/45">
+                        <div className="text-[10px] uppercase font-semibold text-muted">Readability</div>
+                        <div className="text-xs font-bold text-fg mt-0.5">{viralResult.thumbnailTextScore.readability}/100</div>
+                      </div>
+                      <div className="bg-panelSoft/50 p-2.5 rounded border border-line/45">
+                        <div className="text-[10px] uppercase font-semibold text-muted">Emotion</div>
+                        <div className="text-xs font-bold text-fg mt-0.5">{viralResult.thumbnailTextScore.emotion}/100</div>
+                      </div>
+                      <div className="bg-panelSoft/50 p-2.5 rounded border border-line/45">
+                        <div className="text-[10px] uppercase font-semibold text-muted">Curiosity</div>
+                        <div className="text-xs font-bold text-fg mt-0.5">{viralResult.thumbnailTextScore.curiosity}/100</div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-muted leading-5">
+                      <span className="font-semibold text-accent">Analysis:</span> {viralResult.thumbnailTextScore.notes}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-fg uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    Top 5 Optimized Titles
+                  </h4>
+                  <div className="grid gap-2">
+                    {viralResult.topTitles.map((title: string, index: number) => {
+                      const computedSeo = Math.max(60, Math.min(100, viralResult.seoMatchScore - index * 3));
+                      const computedCtr = Math.max(60, Math.min(100, viralResult.ctrHookScore - index * 2));
+                      const isPreviewing = mockupTitle === title;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition cursor-pointer ${
+                            isPreviewing 
+                              ? "bg-accent/5 border-accent ring-1 ring-accent/30" 
+                              : "bg-panel border-line hover:border-accent/40"
+                          }`}
+                          onClick={() => setMockupTitle(title)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/15 text-[10px] font-bold text-accent shrink-0">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <span className="text-xs font-semibold text-fg leading-6 block sm:inline flex items-center gap-1.5">
+                                {isPreviewing && <Eye size={10} className="text-accent shrink-0 animate-pulse" />}
+                                <HighlightedTitle title={title} keyword={viralKeyword} />
+                              </span>
+                              <div className="mt-1 sm:mt-0 sm:ml-3 inline-flex gap-2 text-[10px] font-medium text-muted">
+                                <span className="bg-panelSoft px-1.5 py-0.5 rounded border border-line/45">SEO: {computedSeo}</span>
+                                <span className="bg-panelSoft px-1.5 py-0.5 rounded border border-line/45">CTR: {computedCtr}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <CopyButton text={title} label="Copy" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                  {/* Real Search Keywords */}
+                  <div className="rounded-lg border border-line bg-panel p-4 space-y-3">
+                    <h4 className="text-[10px] uppercase font-semibold text-muted tracking-wider">
+                      Real Search Keywords
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {viralResult.trendingSuggestions.length > 0 ? (
+                        viralResult.trendingSuggestions.map((item: string) => (
+                          <span key={item} className="bg-panelSoft text-muted px-2 py-0.5 rounded text-[11px] font-medium border border-line/40">
+                            {item}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted text-[11px]">No suggestion signals found.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Competitor titles list */}
+                  <div className="rounded-lg border border-line bg-panel p-4 space-y-3">
+                    <h4 className="text-[10px] uppercase font-semibold text-muted tracking-wider">
+                      Competitor Titles
+                    </h4>
+                    <div className="space-y-2">
+                      {viralResult.competitors.map((item: any, i: number) => (
+                        <div key={i} className="text-[11px] text-muted truncate border-b border-line/30 pb-1.5 last:border-0 last:pb-0">
+                          <span className="font-semibold text-fg mr-1 shrink-0 bg-panelSoft/80 px-1.5 py-0.5 rounded text-[10px] border border-line/40">
+                            {item.channelName}
+                          </span>
+                          {item.title}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Viral Engine improvement tips */}
+                <div className="rounded-lg border border-line bg-panel p-4 space-y-2">
+                  <h4 className="text-[10px] uppercase font-semibold text-muted tracking-wider text-accent">
+                    Growth Engine Suggestions
+                  </h4>
+                  <ul className="list-disc pl-4 space-y-1 text-xs text-muted leading-5">
+                    {viralResult.improvementNotes.map((note: string, i: number) => (
+                      <li key={i}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <CopyButton text={currentPack.titles.join("\n")} label="Copy All Titles" />
-            <CopyButton text={currentPack.titlePack.curiosity.join("\n")} label="Copy Curiosity" />
-            <CopyButton text={currentPack.titlePack.fear.join("\n")} label="Copy Fear" />
+
+          {/* Fallback Titles List Header */}
+          <div className="border-t border-line/50 pt-5">
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-fg">Other Title Concepts</h4>
+              <p className="text-xs text-muted mt-0.5">Alternative ideas sorted by psychological category to help brainstorming.</p>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <TitleGroupCard title="Curiosity" titles={compiledPack.titlePack.curiosity} />
+              <TitleGroupCard title="Fear" titles={compiledPack.titlePack.fear} />
+              <TitleGroupCard title="Question" titles={compiledPack.titlePack.question} />
+              <TitleGroupCard title="Clickbait" titles={compiledPack.titlePack.clickbait} />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <CopyButton text={compiledPack.titles.join("\n")} label="Copy All Category Titles" />
+            </div>
           </div>
         </div>
       )}
@@ -493,7 +1048,7 @@ export function OutputTabs({ pack, plan = "Free", projectId }: { pack: ContentPa
       {active === "Hashtags" && (
         <div className="space-y-5">
           <div className="flex flex-wrap gap-2">
-            {currentPack.hashtags.map((tag) => (
+            {compiledPack.hashtags.map((tag) => (
               <span key={tag} className="rounded-full bg-panelSoft px-3 py-2 text-sm text-fg">
                 {tag}
               </span>
@@ -791,5 +1346,20 @@ function SourcePill({ value }: { value: string }) {
     <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${classes}`}>
       {label}
     </span>
+  );
+}
+
+function ScoreMetric({ label, score }: { label: string; score: number }) {
+  const color = score >= 85 ? "bg-success" : score >= 70 ? "bg-accent" : "bg-warning";
+  return (
+    <div className="rounded-lg border border-line bg-panelSoft/50 p-3 flex items-center justify-between">
+      <div>
+        <div className="text-[10px] uppercase font-semibold text-muted tracking-wider">{label}</div>
+        <div className="mt-1 text-sm font-semibold text-fg">{score}/100</div>
+      </div>
+      <div className="w-20 h-1.5 bg-line rounded-full overflow-hidden shrink-0 ml-3">
+        <div className={`h-full ${color}`} style={{ width: `${score}%` }} />
+      </div>
+    </div>
   );
 }

@@ -54,8 +54,20 @@ export async function generateContentPack(options: GenerateOptions): Promise<Con
   );
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`Gemini request failed: ${message}`);
+    let message = `Gemini error (${response.status})`;
+    try {
+      const errorBody = await response.json();
+      if (errorBody?.error?.message) {
+        message = errorBody.error.message;
+      }
+    } catch {
+      const text = await response.text().catch(() => "");
+      if (text) message += `: ${text}`;
+    }
+    if (response.status === 503) {
+      return createMockContentPack(normalizedOptions, scenes);
+    }
+    throw new Error(message);
   }
 
   const data = await response.json();

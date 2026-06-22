@@ -8,5 +8,15 @@
     "provider": "lemon-squeezy",
     "manageUrl": null,
     "updatedAt": "2026-06-22T01:37:21.961Z"
+  },
+  "d342e89b-73cb-48ee-adfb-7f2bf6a17042": {
+    "userId": "d342e89b-73cb-48ee-adfb-7f2bf6a17042",
+    "plan": "Pro",
+    "status": "pending",
+    "priceLabel": "$9/month",
+    "nextBillingDate": null,
+    "provider": "lemon-squeezy",
+    "manageUrl": null,
+    "updatedAt": "2026-06-22T02:52:17.603Z"
   }
 }
