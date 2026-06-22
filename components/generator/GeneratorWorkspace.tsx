@@ -49,6 +49,14 @@ My boss gave me a strange list of rules.
 00:00:10,000 --> 00:00:16,000
 The first rule said never answer the phone after midnight.`;
 
+function cleanErrorMessage(message: string): string {
+  const lowercase = message.toLowerCase();
+  if (lowercase.includes("quota exceeded") || lowercase.includes("quota") || lowercase.includes("rate limit") || lowercase.includes("429")) {
+    return "Tài khoản của bạn tạm thời vượt quá giới hạn lượt gọi Gemini API miễn phí (Rate Limit). Vui lòng đợi khoảng 1 phút rồi bấm chạy lại (Regen / Run).";
+  }
+  return message;
+}
+
 type Stats = {
   inputType: string;
   characterCount: number;
@@ -441,7 +449,7 @@ export function GeneratorWorkspace({
       return data;
     } catch (err) {
       setStoryStatus("error");
-      setError(err instanceof Error ? err.message : "Story node failed.");
+      setError(cleanErrorMessage(err instanceof Error ? err.message : "Story node failed."));
       throw err;
     }
   }
@@ -486,7 +494,7 @@ export function GeneratorWorkspace({
       return data;
     } catch (err) {
       setScenesStatus("error");
-      setError(err instanceof Error ? err.message : "Scenes node failed.");
+      setError(cleanErrorMessage(err instanceof Error ? err.message : "Scenes node failed."));
       throw err;
     }
   }
@@ -539,7 +547,7 @@ export function GeneratorWorkspace({
       return data;
     } catch (err) {
       setSeoStatus("error");
-      setError(err instanceof Error ? err.message : "SEO node failed.");
+      setError(cleanErrorMessage(err instanceof Error ? err.message : "SEO node failed."));
       throw err;
     }
   }
@@ -584,7 +592,7 @@ export function GeneratorWorkspace({
       return data;
     } catch (err) {
       setThumbnailStatus("error");
-      setError(err instanceof Error ? err.message : "Thumbnail node failed.");
+      setError(cleanErrorMessage(err instanceof Error ? err.message : "Thumbnail node failed."));
       throw err;
     }
   }
@@ -620,7 +628,7 @@ export function GeneratorWorkspace({
       setNotice("Content pack generated successfully via workflow pipeline.");
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Pipeline execution interrupted.");
+      setError(cleanErrorMessage(err instanceof Error ? err.message : "Pipeline execution interrupted."));
     } finally {
       setLoading(false);
     }
